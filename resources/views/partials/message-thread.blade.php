@@ -1,96 +1,176 @@
-<div style="max-width:700px;">
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;height:400px;overflow-y:auto;padding:20px;margin-bottom:16px;" id="message-thread">
-        @forelse($booking->messages as $msg)
-            <div data-msg-id="{{ $msg->id }}" style="display:flex;gap:10px;margin-bottom:16px;{{ $msg->user_id === auth()->id() ? 'flex-direction:row-reverse;' : '' }}">
-                <div style="width:32px;height:32px;border-radius:50%;background:{{ $msg->user_id === auth()->id() ? 'var(--gold)' : 'var(--light-honey)' }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ $msg->user_id === auth()->id() ? 'var(--charcoal)' : 'var(--gold-dark)' }};flex-shrink:0;">
-                    {{ substr($msg->user->name, 0, 1) }}
-                </div>
-                <div style="max-width:75%;">
-                    <div style="background:{{ $msg->user_id === auth()->id() ? 'var(--gold)' : 'var(--cream)' }};border-radius:12px;padding:10px 14px;{{ $msg->user_id === auth()->id() ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;' }}">
-                        <p style="margin:0;font-size:13px;color:{{ $msg->user_id === auth()->id() ? 'var(--charcoal)' : 'var(--text-primary)' }};">{{ $msg->message }}</p>
-                    </div>
-                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;{{ $msg->user_id === auth()->id() ? 'text-align:right;' : '' }}">
-                        {{ $msg->user->name }} · {{ $msg->created_at->diffForHumans() }}
-                    </div>
-                </div>
+@php
+    $participantNames = collect([$booking->customer?->name])
+        ->merge($booking->bookingItems->map(fn ($bi) => $bi->vendorProfile?->user?->name))
+        ->filter()
+        ->unique()
+        ->take(3)
+        ->join(', ');
+@endphp
+
+<div class="mchat">
+    <div class="mchat-head">
+        <div class="mchat-head-left">
+            <div class="mchat-head-icon"><i class="ti ti-message-circle-2"></i></div>
+            <div>
+                <div class="mchat-head-title">Chat · Booking #{{ $booking->id }}</div>
+                <div class="mchat-head-sub">@if($participantNames){{ $participantNames }}@else{{ $booking->customer?->name }}@endif</div>
             </div>
-        @empty
-            <div class="message-empty" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
-                <i class="ti ti-message-2" style="font-size:36px;opacity:0.3;display:block;margin-bottom:8px;"></i>
-                <p style="font-size:14px;">No messages yet. Start the conversation!</p>
-            </div>
-        @endforelse
+        </div>
+        <div class="mchat-live" id="mchat-live">
+            <span class="mchat-live-dot"></span> <span id="mchat-live-text">Connecting…</span>
+        </div>
     </div>
 
-    <form method="POST" action="{{ $route }}" class="send-message-form" style="display:flex;gap:8px;">
-        @csrf
-        <input type="text" name="message" placeholder="Type your message..." required
-               style="flex:1;border:2px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;outline:none;transition:border-color 0.2s;"
-               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
-        <button type="submit" style="background:var(--gold);border:none;color:var(--charcoal);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;"
-                onmouseover="this.style.background='var(--gold-dark)';this.style.color='#fff'" onmouseout="this.style.background='var(--gold)';this.style.color='var(--charcoal)'">
-            <i class="ti ti-send"></i> Send
+    <div class="mchat-body" id="message-thread">
+        <div class="mchat-empty message-empty" style="{{ $booking->messages->isEmpty() ? '' : 'display:none;' }}">
+            <i class="ti ti-message-2"></i>
+            <p>No messages yet. Start the conversation!</p>
+        </div>
+
+        @foreach($booking->messages as $msg)
+            @include('partials.message-bubble', ['msg' => $msg])
+        @endforeach
+
+        <button type="button" class="mchat-newpill hidden" id="mchat-newpill" onclick="mchatScrollDown()">
+            <i class="ti ti-arrow-down"></i> New messages
         </button>
-    </form>
-    <div id="realtime-status" style="display:none;margin-top:8px;font-size:11px;color:var(--text-muted);background:var(--cream);border:1px dashed var(--gold-dark);border-radius:8px;padding:6px 10px;">
-        Real-time updates are off (Firebase not connected). Messages still save.
     </div>
+
+    <form method="POST" action="{{ $route }}" class="mchat-form send-message-form">
+        @csrf
+        <input type="text" name="message" placeholder="Type your message…" required autocomplete="off"
+               class="mchat-input" maxlength="2000">
+        <button type="submit" class="mchat-send"><i class="ti ti-send"></i> Send</button>
+    </form>
 </div>
 
+<style>
+.mchat{max-width:760px;margin:0 auto;background:var(--white,#fff);border:1px solid var(--border,#e5dfd4);border-radius:16px;box-shadow:0 10px 30px rgba(43,38,32,0.08);overflow:hidden;display:flex;flex-direction:column;}
+.mchat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border,#e5dfd4);background:var(--charcoal,#2b2620);color:#fff;}
+.mchat-head-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.mchat-head-icon{width:38px;height:38px;border-radius:10px;background:var(--gold,#d4a017);color:var(--charcoal,#2b2620);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.mchat-head-title{font-size:14px;font-weight:700;line-height:1.2;}
+.mchat-head-sub{font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
+.mchat-live{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;background:rgba(255,255,255,0.12);color:#ddd;white-space:nowrap;}
+.mchat-live-dot{width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0;}
+.mchat-live.on{color:#7ef0a6;background:rgba(126,240,166,0.14);}
+.mchat-live.on .mchat-live-dot{background:#37d67a;box-shadow:0 0 0 3px rgba(55,214,122,0.25);animation:mchat-pulse 1.6s infinite;}
+.mchat-live.off{color:#f2c14e;background:rgba(242,193,78,0.14);}
+.mchat-live.off .mchat-live-dot{background:#f2c14e;}
+@keyframes mchat-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.mchat-body{position:relative;height:440px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;background:var(--cream,#faf7ee);}
+.mchat-empty{text-align:center;padding:50px 20px;color:var(--text-muted,#8a8378);margin:auto;}
+.mchat-empty i{font-size:40px;opacity:.3;display:block;margin-bottom:10px;}
+.mchat-empty p{margin:0;font-size:14px;}
+.mchat-msg{display:flex;gap:10px;margin-bottom:16px;max-width:85%;}
+.mchat-msg.mine{align-self:flex-end;flex-direction:row-reverse;}
+.mchat-msg.mine .mchat-bubble{background:var(--gold,#d4a017);color:var(--charcoal,#2b2620);border-bottom-right-radius:4px;box-shadow:0 2px 8px rgba(212,160,23,0.25);}
+.mchat-msg.theirs .mchat-bubble{background:#fff;color:var(--text-primary,#2b2620);border-bottom-left-radius:4px;border:1px solid var(--border,#e5dfd4);box-shadow:0 1px 4px rgba(43,38,32,0.06);}
+.mchat-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.mchat-msg.mine .mchat-avatar{background:var(--charcoal,#2b2620);color:var(--gold,#d4a017);}
+.mchat-msg.theirs .mchat-avatar{background:var(--light-honey,#f4e3b0);color:var(--gold-dark,#9a7412);}
+.mchat-bubble{padding:9px 14px;border-radius:14px;font-size:13.5px;line-height:1.45;max-width:100%;word-wrap:break-word;overflow-wrap:anywhere;}
+.mchat-meta{font-size:10px;color:var(--text-muted,#8a8378);margin-top:3px;display:flex;gap:5px;align-items:center;}
+.mchat-msg.mine .mchat-meta{justify-content:flex-end;}
+.mchat-meta .mchat-name{font-weight:600;color:var(--gold-dark,#9a7412);}
+.mchat-newpill{position:sticky;bottom:10px;margin:0 auto -6px;z-index:5;border:none;background:var(--charcoal,#2b2620);color:#fff;font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;cursor:pointer;box-shadow:0 4px 14px rgba(43,38,32,0.25);display:flex;align-items:center;gap:6px;}
+.mchat-newpill.hidden{display:none;}
+.mchat-form{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--border,#e5dfd4);background:#fff;}
+.mchat-input{flex:1;border:2px solid var(--border,#e5dfd4);border-radius:12px;padding:11px 16px;font-size:14px;outline:none;transition:border-color .2s;background:var(--cream,#faf7ee);color:var(--text-primary,#2b2620);}
+.mchat-input:focus{border-color:var(--gold,#d4a017);}
+.mchat-send{background:var(--gold,#d4a017);border:none;color:var(--charcoal,#2b2620);padding:11px 20px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s;}
+.mchat-send:hover{background:var(--gold-dark,#9a7412);color:#fff;}
+.mchat-send:disabled{opacity:.6;cursor:default;}
+.mchat-enter{animation:mchat-in .25s ease;}
+@keyframes mchat-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:576px){.mchat-body{height:52vh}.mchat-head-sub{max-width:120px}}
+</style>
+
 @push('scripts')
+<script>
+    var mchatThread = document.getElementById('message-thread');
+    var mchatNewPill = document.getElementById('mchat-newpill');
+    var mchatLive = document.getElementById('mchat-live');
+    var mchatNearBottom = function () {
+        return mchatThread.scrollHeight - mchatThread.scrollTop - mchatThread.clientHeight < 130;
+    };
+
+    function mchatScrollDown() {
+        mchatThread.scrollTop = mchatThread.scrollHeight;
+        if (mchatNewPill) mchatNewPill.classList.add('hidden');
+    }
+
+    function mchatSetLive(on) {
+        if (!mchatLive) return;
+        mchatLive.classList.remove('on', 'off');
+        var txt = document.getElementById('mchat-live-text');
+        if (on) {
+            mchatLive.classList.add('on');
+            if (txt) txt.textContent = 'Live';
+        } else {
+            mchatLive.classList.add('off');
+            if (txt) txt.textContent = 'Offline';
+        }
+    }
+
+    function mchatNotify(message, type) {
+        if (typeof showToast === 'function') {
+            if (showToast.length === 3) showToast(type, 'Message', message);
+            else showToast(message, type);
+        }
+    }
+
+    function mchatBubbleHtml(msg) {
+        var mine = String(msg.user_id) === String(currentUserId);
+        var initial = (msg.name || '?').charAt(0);
+        var name = mine ? 'You' : (msg.name || '');
+        var time = '';
+        if (msg.created_at) {
+            var d = new Date(Number(msg.created_at));
+            if (!isNaN(d.getTime())) {
+                var now = new Date();
+                var sameDay = d.toDateString() === now.toDateString();
+                time = sameDay
+                    ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            }
+        }
+        var nameMeta = (mine || !name) ? '' : '<span class="mchat-name">' + name + '</span>';
+        return '<div data-msg-id="' + msg.id + '" class="mchat-msg ' + (mine ? 'mine' : 'theirs') + '">' +
+            '<div class="mchat-avatar">' + initial + '</div>' +
+            '<div style="max-width:100%;">' +
+            '<div class="mchat-bubble">' + msg.message + '</div>' +
+            '<div class="mchat-meta">' + nameMeta + '<span>' + time + '</span></div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function mchatAppend(msg) {
+        if (!msg || !msg.id) return;
+        if (document.querySelector('[data-msg-id="' + msg.id + '"]')) return;
+        var empty = document.querySelector('#message-thread .mchat-empty');
+        if (empty) empty.style.display = 'none';
+        var atBottom = mchatNearBottom();
+        mchatThread.insertAdjacentHTML('beforeend', mchatBubbleHtml(msg));
+        var el = mchatThread.lastElementChild;
+        if (el) el.classList.add('mchat-enter');
+        if (atBottom) mchatScrollDown();
+        else if (mchatNewPill) mchatNewPill.classList.remove('hidden');
+    }
+
+    mchatThread.addEventListener('scroll', function () {
+        if (mchatNearBottom() && mchatNewPill) mchatNewPill.classList.add('hidden');
+    });
+
+    if (mchatNearBottom()) mchatScrollDown();
+</script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
     import { getDatabase, ref, query, orderByChild, onChildAdded } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
     var bookingId = {{ $booking->id }};
     var currentUserId = {{ auth()->id() }};
-    var currentUserName = @json(auth()->user()->name);
     var fbEnabled = false;
-
-    var thread = document.getElementById('message-thread');
-
-    function scrollBottom() {
-        if (thread) thread.scrollTop = thread.scrollHeight;
-    }
-    if (thread) scrollBottom();
-
-    function notify(message, type) {
-        if (typeof showToast === 'function') {
-            if (showToast.length === 3) {
-                showToast(type, 'Message', message);
-            } else {
-                showToast(message, type);
-            }
-        }
-    }
-
-    function bubbleHtml(msg) {
-        var mine = String(msg.user_id) === String(currentUserId);
-        var initial = (msg.name || '?').charAt(0);
-        var time = '';
-        if (msg.created_at) {
-            var d = new Date(Number(msg.created_at));
-            if (!isNaN(d.getTime())) time = d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        }
-        return '<div data-msg-id="' + msg.id + '" style="display:flex;gap:10px;margin-bottom:16px;' + (mine ? 'flex-direction:row-reverse;' : '') + '">' +
-            '<div style="width:32px;height:32px;border-radius:50%;background:' + (mine ? 'var(--gold)' : 'var(--light-honey)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + (mine ? 'var(--charcoal)' : 'var(--gold-dark)') + ';flex-shrink:0;">' + initial + '</div>' +
-            '<div style="max-width:75%;">' +
-            '<div style="background:' + (mine ? 'var(--gold)' : 'var(--cream)') + ';border-radius:12px;padding:10px 14px;' + (mine ? 'border-bottom-right-radius:4px;' : 'border-bottom-left-radius:4px;') + '">' +
-            '<p style="margin:0;font-size:13px;color:' + (mine ? 'var(--charcoal)' : 'var(--text-primary)') + ';">' + msg.message + '</p>' +
-            '</div>' +
-            '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;' + (mine ? 'text-align:right;' : '') + '">' + (msg.name || '') + (time ? ' · ' + time : '') + '</div>' +
-            '</div>' +
-            '</div>';
-    }
-
-    function appendMsg(msg) {
-        if (!msg || !msg.id) return;
-        if (document.querySelector('[data-msg-id="' + msg.id + '"]')) return;
-        var empty = document.querySelector('#message-thread .message-empty');
-        if (empty) empty.remove();
-        thread.insertAdjacentHTML('beforeend', bubbleHtml(msg));
-        scrollBottom();
-    }
 
     try {
         var firebaseConfig = {
@@ -111,21 +191,23 @@
                 var data = snap.val();
                 if (!data) return;
                 data.id = snap.key;
-                appendMsg(data);
+                mchatAppend(data);
+            }, function (err) {
+                console.warn('Firebase realtime read error:', err);
+                fbEnabled = false;
+                mchatSetLive(false);
             });
             fbEnabled = true;
+            mchatSetLive(true);
+        } else {
+            mchatSetLive(false);
         }
     } catch (e) {
         console.warn('Firebase realtime chat unavailable:', e);
+        mchatSetLive(false);
     }
 
-    if (!fbEnabled) {
-        console.warn('Firebase realtime chat not connected — live updates disabled.');
-        var rs = document.getElementById('realtime-status');
-        if (rs) rs.style.display = 'block';
-    }
-
-    document.querySelector('.send-message-form')?.addEventListener('submit', function(e) {
+    document.querySelector('.send-message-form')?.addEventListener('submit', function (e) {
         e.preventDefault();
         var form = this;
         var input = form.querySelector('input[name="message"]');
@@ -134,41 +216,44 @@
         if (!text) return;
 
         btn.disabled = true;
-        btn.innerHTML = '...';
+        btn.innerHTML = '…';
 
         var csrfToken = '{{ csrf_token() }}';
-        fetch(form.action, {
+        var endpoint = window.location.origin + window.location.pathname;
+        fetch(endpoint, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'},
-            body: JSON.stringify({message: text, _token: csrfToken})
-        }).then(function(r) {
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: JSON.stringify({ message: text, _token: csrfToken })
+        }).then(function (r) {
             var ct = (r.headers.get('content-type') || '');
             if (r.status === 419 || r.status === 401) {
-                notify('Session expired — refreshing, please resend your message', 'warning');
-                setTimeout(function(){ location.reload(); }, 1200);
+                mchatNotify('Session expired — refreshing, please resend your message', 'warning');
+                setTimeout(function () { location.reload(); }, 1200);
                 return null;
             }
             if (!r.ok || ct.indexOf('application/json') === -1) {
-                notify('Network error', 'error');
+                mchatNotify('Network error — check your connection', 'error');
                 return null;
             }
             return r.json();
-        }).then(function(d) {
+        }).then(function (d) {
             if (!d) return;
             if (d.success) {
                 input.value = '';
                 if (d.message && d.message.id) {
-                    appendMsg(d.message);
+                    mchatAppend(d.message);
                 } else if (!fbEnabled) {
                     location.reload();
                 }
             } else {
-                notify('Failed to send message', 'error');
+                mchatNotify('Failed to send message', 'error');
             }
-        }).catch(function() {
-            notify('Network error', 'error');
-        })
-        .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Send'; });
+        }).catch(function () {
+            mchatNotify('Network error — check your connection', 'error');
+        }).finally(function () {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ti ti-send"></i> Send';
+        });
     });
 </script>
 @endpush

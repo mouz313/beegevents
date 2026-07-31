@@ -9,6 +9,6 @@
         <a href="{{ route('vendor.bookings.index') }}" style="font-size:13px;color:var(--gold-dark);">← Back to Bookings</a>
     </div>
 
-    @include('partials.message-thread', ['booking' => $booking, 'route' => route('vendor.messages.store', $booking)])
+    @include('partials.message-thread', ['booking' => $booking, 'route' => url()->current()])
 </div>
 @endsection

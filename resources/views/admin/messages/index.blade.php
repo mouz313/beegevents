@@ -8,5 +8,5 @@
     <a href="{{ route('admin.bookings.show', $booking) }}" class="btn btn-outline-secondary btn-sm">← Back to Booking</a>
 </div>
 
-@include('partials.message-thread', ['booking' => $booking, 'route' => route('admin.messages.store', $booking)])
+@include('partials.message-thread', ['booking' => $booking, 'route' => url()->current()])
 @endsection
