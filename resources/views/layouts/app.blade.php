@@ -84,6 +84,7 @@
             <i class="ti ti-calendar-plus"></i> Book Now
         </button>
         @auth
+            @include('partials.notification-bell')
             <div class="user-dropdown">
                 <div class="dropdown-trigger" onclick="this.nextElementSibling.classList.toggle('show')">
                     <div class="avatar">{{ substr(auth()->user()->name, 0, 1) }}</div>

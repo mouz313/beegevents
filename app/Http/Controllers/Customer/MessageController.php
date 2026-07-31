@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Message;
+use App\Services\NotificationService;
 use App\Services\RealtimeChatService;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,13 @@ class MessageController extends Controller
         ]);
 
         app(RealtimeChatService::class)->publish($message);
+
+        app(NotificationService::class)->notifyParticipants(
+            $booking,
+            auth()->id(),
+            'New message from '.auth()->user()->name,
+            $message->message,
+        );
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

@@ -21,6 +21,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingOptionsController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CorporateLeadController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
 use App\Http\Controllers\Customer\BudgetMatchController;
 use App\Http\Controllers\Customer\CartController;
@@ -86,6 +87,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
     Route::post('/email/verification-notification', [VerificationController::class, 'send'])->name('verification.send');
+});
+
+Route::middleware('auth')->prefix('notifications')->name('notifications.')->controller(NotificationController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('/unread-count', 'unreadCount')->name('unread-count');
+    Route::post('/read-all', 'readAll')->name('read-all');
+    Route::post('/{notification}/read', 'read')->name('read');
 });
 
 Route::controller(BrowseController::class)->group(function () {

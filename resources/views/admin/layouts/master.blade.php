@@ -112,12 +112,7 @@
                     <i class="ti ti-search"></i>
                     <input type="text" placeholder="Search anything..." id="adminSearch" onkeyup="if(event.key==='Enter') alert('Search: '+this.value)">
                 </div>
-                <a href="{{ route('admin.bookings.index') }}" class="btn-icon">
-                    <i class="ti ti-bell"></i>
-                    @if(\App\Models\Booking::where('status', 'requested')->count() > 0)
-                        <span class="dot"></span>
-                    @endif
-                </a>
+                @include('partials.notification-bell')
             </div>
         </header>
 
