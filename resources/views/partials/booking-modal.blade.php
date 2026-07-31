@@ -1,18 +1,22 @@
 <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-            <div class="modal-header" style="border-bottom:1px solid var(--border);">
-                <h5 class="modal-title" id="bookingModalLabel" style="font-weight:700;color:var(--charcoal);">Book Your Event</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content bm-modal">
+            <div class="modal-header bm-header">
+                <h5 class="modal-title" id="bookingModalLabel">
+                    <span class="bm-header-icon"><i class="ti ti-calendar-plus"></i></span>
+                    Book Your Event
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
 
                 {{-- Step 1: choose booking type --}}
                 <div id="bmStep1" class="p-4">
-                    <p class="text-muted" style="font-size:13px;">Choose how you'd like to book your event.</p>
+                    <p class="bm-subtitle mb-4">Choose how you'd like to book your event.</p>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <button type="button" class="bm-card bm-card-package w-100" data-bm-card="package">
+                            <button type="button" class="bm-card w-100" data-bm-card="package">
+                                <span class="bm-card-step">1</span>
                                 <i class="ti ti-gift"></i>
                                 <strong>Package</strong>
                                 <span>Ready-made packages by hall owners</span>
@@ -20,6 +24,7 @@
                         </div>
                         <div class="col-md-4">
                             <button type="button" class="bm-card w-100" data-bm-card="custom">
+                                <span class="bm-card-step">2</span>
                                 <i class="ti ti-list-details"></i>
                                 <strong>Custom</strong>
                                 <span>Pick services, get a quote, then discuss</span>
@@ -27,6 +32,7 @@
                         </div>
                         <div class="col-md-4">
                             <button type="button" class="bm-card w-100" data-bm-card="budget">
+                                <span class="bm-card-step">3</span>
                                 <i class="ti ti-wallet"></i>
                                 <strong>Budget</strong>
                                 <span>Enter amount &amp; guests, we suggest a bundle</span>
@@ -37,44 +43,44 @@
 
                 {{-- Step 2: Package --}}
                 <div id="bmStepPackage" class="d-none p-4">
-                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
-                    <h6 style="font-weight:700;">Choose a date &amp; package</h6>
-                    <input type="date" id="bmPackageDate" class="form-control mb-3">
+                    <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
+                    <h6 class="bm-step-title">Choose a date &amp; package</h6>
+                    <input type="date" id="bmPackageDate" class="form-control bm-input mb-3">
                     <div id="bmPackageList">
-                        <div class="text-center py-4 text-muted" style="font-size:13px;">Loading packages...</div>
+                        <div class="bm-loading">Loading packages...</div>
                     </div>
                 </div>
 
                 {{-- Step 2: Custom --}}
                 <div id="bmStepCustom" class="d-none p-4">
-                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
-                    <h6 style="font-weight:700;">Choose a date &amp; services</h6>
-                    <input type="date" id="bmCustomDate" class="form-control mb-3">
+                    <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
+                    <h6 class="bm-step-title">Choose a date &amp; services</h6>
+                    <input type="date" id="bmCustomDate" class="form-control bm-input mb-3">
                     <div id="bmCategoryList">
-                        <div class="text-center py-4 text-muted" style="font-size:13px;">Loading services...</div>
+                        <div class="bm-loading">Loading services...</div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
-                        <button type="button" class="btn btn-primary flex-fill" id="bmCustomAddCart">Add Selected to Cart</button>
-                        <button type="button" class="btn btn-gold flex-fill" id="bmCustomQuote" style="color:var(--white);background:var(--gold-dark);border:none;">Get Quote</button>
+                        <button type="button" class="btn bm-btn-outline flex-fill" id="bmCustomAddCart">Add Selected to Cart</button>
+                        <button type="button" class="btn bm-btn-gold flex-fill" id="bmCustomQuote">Get Quote</button>
                     </div>
                 </div>
 
                 {{-- Step 2: Budget --}}
                 <div id="bmStepBudget" class="d-none p-4">
-                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
-                    <h6 style="font-weight:700;">Find a bundle in your budget</h6>
+                    <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
+                    <h6 class="bm-step-title">Find a bundle in your budget</h6>
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label" style="font-size:12px;">Budget (PKR)</label>
-                            <input type="number" id="bmBudgetAmount" class="form-control" min="1" placeholder="e.g. 500000">
+                            <label class="form-label bm-label">Budget (PKR)</label>
+                            <input type="number" id="bmBudgetAmount" class="form-control bm-input" min="1" placeholder="e.g. 500000">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label" style="font-size:12px;">Guests</label>
-                            <input type="number" id="bmBudgetGuests" class="form-control" min="1" placeholder="e.g. 200">
+                            <label class="form-label bm-label">Guests</label>
+                            <input type="number" id="bmBudgetGuests" class="form-control bm-input" min="1" placeholder="e.g. 200">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label" style="font-size:12px;">Event Type</label>
-                            <select id="bmBudgetEventType" class="form-select">
+                            <label class="form-label bm-label">Event Type</label>
+                            <select id="bmBudgetEventType" class="form-select bm-input">
                                 <option value="">Any</option>
                                 <option value="wedding">Wedding</option>
                                 <option value="engagement">Engagement</option>
@@ -85,7 +91,7 @@
                             </select>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-primary w-100 mb-3" id="bmBudgetFind">Find Bundle</button>
+                    <button type="button" class="btn bm-btn-gold w-100 mb-3" id="bmBudgetFind">Find Bundle</button>
                     <div id="bmBudgetResult"></div>
                 </div>
 
@@ -95,26 +101,57 @@
 </div>
 
 <style>
-.bm-card {
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    padding:24px 12px;border:2px solid var(--border);border-radius:14px;background:var(--white);
-    text-align:center;cursor:pointer;transition:all 0.2s ease;height:100%;
-}
-.bm-card i { font-size:30px;color:var(--gold-dark); }
-.bm-card strong { font-size:15px;color:var(--charcoal); }
-.bm-card span { font-size:12px;color:var(--text-muted); }
-.bm-card:hover { border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 16px rgba(212,160,23,0.15); }
-.bm-package-item { display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px; }
-.bm-package-item .bm-pkg-info { flex:1; }
-.bm-package-item .bm-pkg-title { font-weight:600;font-size:14px;color:var(--charcoal); }
-.bm-package-item .bm-pkg-meta { font-size:12px;color:var(--text-muted); }
-.bm-service-item { display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border); }
+.bm-modal { border:none; border-radius:16px; overflow:hidden; box-shadow:0 24px 60px rgba(43,38,32,0.35); }
+
+.bm-header { background:linear-gradient(135deg, var(--charcoal) 0%, #3D342D 100%); border-bottom:none; }
+.bm-header .modal-title { color:var(--white); font-weight:800; display:flex; align-items:center; gap:10px; font-size:17px; }
+.bm-header-icon { width:36px; height:36px; background:var(--gold); border-radius:9px; display:inline-flex; align-items:center; justify-content:center; color:var(--charcoal); flex-shrink:0; }
+
+.bm-subtitle { font-size:13px; color:var(--text-muted); }
+.bm-step-title { font-weight:700; color:var(--charcoal); font-size:15px; margin-bottom:10px; }
+.bm-label { font-size:12px; font-weight:600; color:var(--charcoal); }
+
+.bm-input { border:1.5px solid var(--border); border-radius:10px; font-size:14px; }
+.bm-input:focus { border-color:var(--gold); box-shadow:0 0 0 0.2rem rgba(212,160,23,0.15); }
+
+.bm-loading { text-align:center; padding:28px 0; color:var(--text-muted); font-size:13px; }
+
+.bm-card { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:26px 14px; border:1.5px solid var(--border); border-radius:14px; background:var(--cream); text-align:center; cursor:pointer; transition:all 0.2s ease; height:100%; }
+.bm-card .bm-card-step { position:absolute; top:10px; left:12px; width:22px; height:22px; border-radius:50%; background:var(--charcoal); color:var(--gold); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.bm-card i { font-size:32px; color:var(--gold-dark); }
+.bm-card strong { font-size:15px; color:var(--charcoal); }
+.bm-card span { font-size:12px; color:var(--text-muted); }
+.bm-card:hover, .bm-card:focus-visible { border-color:var(--gold); background:var(--light-honey); transform:translateY(-2px); box-shadow:0 8px 20px rgba(212,160,23,0.18); }
+
+.bm-btn-gold { background:var(--gold); color:var(--charcoal); font-weight:700; border:none; border-radius:10px; }
+.bm-btn-gold:hover { background:var(--gold-dark); color:var(--white); }
+.bm-btn-outline { border:1.5px solid var(--gold); color:var(--gold-dark); font-weight:600; background:transparent; border-radius:10px; }
+.bm-btn-outline:hover { background:var(--gold); color:var(--charcoal); }
+
+.bm-package-item { display:flex; align-items:center; gap:12px; padding:14px; background:var(--cream); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; }
+.bm-package-item .bm-pkg-info { flex:1; min-width:0; }
+.bm-package-item .bm-pkg-title { font-weight:700; font-size:14px; color:var(--charcoal); }
+.bm-package-item .bm-pkg-meta { font-size:12px; color:var(--text-muted); }
+.bm-pkg-price { font-weight:800; color:var(--gold-dark); font-size:14px; }
+
+.bm-service-item { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
 .bm-service-item:last-child { border-bottom:none; }
-.bm-tag { font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px; }
-.bm-tag.within_budget { background:#E6F7ED;color:var(--green); }
-.bm-tag.slightly_above { background:#FFF3E0;color:var(--amber); }
-.bm-tag.services_only { background:#E8EEF1;color:var(--blue-grey); }
-.bm-tag.over_budget { background:#FDECEC;color:var(--red); }
+
+.bm-accordion .accordion-button { color:var(--text-primary); background:var(--white); font-weight:600; font-size:14px; }
+.bm-accordion .accordion-button:not(.collapsed) { background:var(--light-honey); color:var(--charcoal); box-shadow:none; }
+.bm-accordion .accordion-button:focus { box-shadow:0 0 0 0.2rem rgba(212,160,23,0.15); }
+.bm-accordion .accordion-item { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:10px; }
+.bm-badge { background:var(--gold); color:var(--charcoal); font-weight:600; }
+
+.bm-bundle-box { border:1.5px solid var(--gold); border-radius:14px; padding:16px; background:var(--cream); }
+.bm-bundle-box .bm-bundle-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.bm-bundle-box .bm-bundle-total { font-weight:800; color:var(--gold-dark); }
+
+.bm-tag { font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; letter-spacing:0.3px; }
+.bm-tag.within_budget { background:#E6F7ED; color:var(--green); }
+.bm-tag.slightly_above { background:#FFF3E0; color:var(--amber); }
+.bm-tag.services_only { background:#E8EEF1; color:var(--blue-grey); }
+.bm-tag.over_budget { background:#FDECEC; color:var(--red); }
 </style>
 
 @push('scripts')
@@ -201,8 +238,8 @@
                 (p.description ? '<div class="bm-pkg-meta">' + p.description + '</div>' : '') +
                 '</div>' +
                 '<div class="text-end" style="white-space:nowrap;">' +
-                '<div style="font-weight:700;color:var(--gold-dark);">PKR ' + Number(p.total_price).toLocaleString() + '</div>' +
-                '<button type="button" class="btn btn-sm btn-primary mt-1" data-book-package="' + p.id + '">Book</button>' +
+                '<div class="bm-pkg-price">PKR ' + Number(p.total_price).toLocaleString() + '</div>' +
+                '<button type="button" class="btn btn-sm bm-btn-gold mt-1" data-book-package="' + p.id + '">Book</button>' +
                 '</div></div>';
         });
         list.innerHTML = html;
@@ -244,21 +281,21 @@
             list.innerHTML = '<div class="alert alert-info mb-0">No services available yet.</div>';
             return;
         }
-        var html = '<div class="accordion" id="bmAccordion">';
+        var html = '<div class="accordion bm-accordion" id="bmAccordion">';
         bmOptions.categories.forEach(function (cat, ci) {
             if (!cat.listings.length) return;
             html += '<div class="accordion-item">' +
-                '<h2 class="accordion-header"><button class="accordion-button ' + (ci === 0 ? '' : 'collapsed') + '" type="button" data-bs-toggle="collapse" data-bs-target="#bmCat' + cat.id + '">' + cat.name + ' <span class="badge bg-secondary ms-2">' + cat.listings.length + '</span></button></h2>' +
+                '<h2 class="accordion-header"><button class="accordion-button ' + (ci === 0 ? '' : 'collapsed') + '" type="button" data-bs-toggle="collapse" data-bs-target="#bmCat' + cat.id + '">' + cat.name + ' <span class="badge bm-badge ms-2">' + cat.listings.length + '</span></button></h2>' +
                 '<div id="bmCat' + cat.id + '" class="accordion-collapse collapse ' + (ci === 0 ? 'show' : '') + '" data-bs-parent="#bmAccordion">' +
                 '<div class="accordion-body p-0">';
             cat.listings.forEach(function (l) {
                 html += '<div class="bm-service-item">' +
                     '<input type="checkbox" class="form-check-input bm-service-check" data-id="' + l.id + '" data-price="' + l.price + '">' +
                     '<div style="flex:1;">' +
-                    '<div style="font-weight:600;font-size:13px;">' + l.title + '</div>' +
+                    '<div style="font-weight:600;font-size:13px;color:var(--charcoal);">' + l.title + '</div>' +
                     '<div style="font-size:11px;color:var(--text-muted);">' + (l.vendor || '') + '</div>' +
                     '</div>' +
-                    '<div style="font-size:13px;font-weight:600;white-space:nowrap;">PKR ' + Number(l.price).toLocaleString() + '</div>' +
+                    '<div style="font-size:13px;font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(l.price).toLocaleString() + '</div>' +
                     '</div>';
             });
             html += '</div></div></div>';
@@ -333,7 +370,7 @@
         if (eventType) body.append('event_type', eventType);
 
         var resultBox = document.getElementById('bmBudgetResult');
-        resultBox.innerHTML = '<div class="text-center py-4 text-muted" style="font-size:13px;">Finding the best bundle...</div>';
+        resultBox.innerHTML = '<div class="bm-loading">Finding the best bundle...</div>';
 
         fetch('{{ route("booking.budget") }}', {
             method: 'POST',
@@ -356,31 +393,31 @@
         var tags = { within_budget: 'Within Budget', slightly_above: 'Slightly Above Budget', services_only: 'Services Only' };
         var tagLabel = tags[b.tag] || b.tag;
 
-        var html = '<div class="border rounded-3 p-3" style="border-color:var(--gold)!important;">' +
-            '<div class="d-flex justify-content-between align-items-center mb-2">' +
-            '<strong style="color:var(--charcoal);">Suggested Bundle</strong>' +
+        var html = '<div class="bm-bundle-box">' +
+            '<div class="bm-bundle-head">' +
+            '<strong style="color:var(--charcoal);"><i class="ti ti-package"></i> Suggested Bundle</strong>' +
             '<span class="bm-tag ' + b.tag + '">' + tagLabel + '</span>' +
             '</div>';
 
         if (b.hall_unit) {
             var unit = b.hall_unit;
             var hallName = (unit.hall && unit.hall.name) ? unit.hall.name : 'Hall';
-            html += '<div class="bm-service-item"><div style="flex:1;">' +
-                '<div style="font-weight:600;font-size:13px;"><i class="ti ti-building"></i> ' + hallName + ' - ' + (unit.unit_name || '') + '</div>' +
+            html += '<div class="bm-service-item" style="padding-left:0;padding-right:0;"><div style="flex:1;">' +
+                '<div style="font-weight:600;font-size:13px;color:var(--charcoal);"><i class="ti ti-building"></i> ' + hallName + ' - ' + (unit.unit_name || '') + '</div>' +
                 '<div style="font-size:11px;color:var(--text-muted);">Capacity: ' + unit.min_capacity + '-' + unit.max_capacity + ' guests</div>' +
-                '</div><div style="font-weight:600;white-space:nowrap;">PKR ' + Number(unit.base_price).toLocaleString() + '</div></div>';
+                '</div><div style="font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(unit.base_price).toLocaleString() + '</div></div>';
         }
 
         (b.services || []).forEach(function (s) {
-            html += '<div class="bm-service-item"><div style="flex:1;font-size:13px;">' + s.title + '</div>' +
-                '<div style="font-size:13px;font-weight:600;white-space:nowrap;">PKR ' + Number(s.price).toLocaleString() + '</div></div>';
+            html += '<div class="bm-service-item" style="padding-left:0;padding-right:0;"><div style="flex:1;font-size:13px;color:var(--charcoal);">' + s.title + '</div>' +
+                '<div style="font-size:13px;font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(s.price).toLocaleString() + '</div></div>';
         });
 
-        html += '<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid var(--border);">' +
+        html += '<div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top:1px solid var(--border);">' +
             '<div style="font-size:12px;color:var(--text-muted);">Budget: PKR ' + Number(b.budget).toLocaleString() + '</div>' +
-            '<div style="font-weight:800;color:var(--gold-dark);">Total: PKR ' + Number(b.total).toLocaleString() + '</div>' +
+            '<div class="bm-bundle-total">Total: PKR ' + Number(b.total).toLocaleString() + '</div>' +
             '</div>' +
-            '<button type="button" class="btn btn-gold w-100 mt-3" id="bmAddBundle" style="color:var(--white);background:var(--gold-dark);border:none;">Add Bundle to Cart</button>' +
+            '<button type="button" class="btn bm-btn-gold w-100 mt-3" id="bmAddBundle">Add Bundle to Cart</button>' +
             '</div>';
 
         box.innerHTML = html;
@@ -441,7 +478,7 @@
 
     modalEl.querySelectorAll('[data-bm-card]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            showStep('bm' + btn.dataset.bmCard.charAt(0).toUpperCase() + btn.dataset.bmCard.slice(1));
+            showStep(btn.dataset.bmCard);
             loadOptions();
         });
     });
