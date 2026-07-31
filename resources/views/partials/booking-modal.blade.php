@@ -420,7 +420,7 @@
             return;
         }
 
-        var tags = { within_budget: 'Within Budget', slightly_above: 'Slightly Above Budget', services_only: 'Services Only' };
+        var tags = { within_budget: 'Within Budget', slightly_above: 'Slightly Above Budget', services_only: 'Services Only', over_budget: 'Over Budget' };
         var tagLabel = tags[b.tag] || b.tag;
 
         var html = '<div class="bm-bundle-box">' +

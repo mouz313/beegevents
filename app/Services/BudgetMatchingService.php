@@ -93,7 +93,7 @@ class BudgetMatchingService
         if ($hall) {
             $remaining = $budget - $hall->base_price;
             if ($remaining < 0) {
-                $tag = 'slightly_above';
+                $tag = $hall->base_price <= $budget * 1.2 ? 'slightly_above' : 'over_budget';
             }
         } else {
             $remaining = $budget;
@@ -117,7 +117,7 @@ class BudgetMatchingService
 
     protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null): ?HallUnit
     {
-        return HallUnit::with('hall.vendorProfile', 'extraServices')
+        $units = HallUnit::with('hall.vendorProfile', 'extraServices')
             ->whereHas('hall.vendorProfile', function ($q) use ($city) {
                 $q->where('status', 'verified');
                 if ($city) {
@@ -126,11 +126,26 @@ class BudgetMatchingService
             })
             ->where('min_capacity', '<=', $guestCount)
             ->where('max_capacity', '>=', $guestCount)
-            ->get()
+            ->get();
+
+        $within = $units
+            ->filter(fn ($unit) => $unit->base_price <= $budget)
+            ->sortBy(fn ($unit) => abs($unit->base_price - $budget))
+            ->first();
+        if ($within) {
+            return $within;
+        }
+
+        $slightlyAbove = $units
             ->filter(fn ($unit) => $unit->base_price <= $budget * 1.2)
-            ->sortBy(fn ($unit) => $unit->base_price <= $budget
-                ? abs($unit->base_price - $budget)
-                : abs($unit->base_price - $budget) + 1_000_000)
+            ->sortBy(fn ($unit) => $unit->base_price - $budget)
+            ->first();
+        if ($slightlyAbove) {
+            return $slightlyAbove;
+        }
+
+        return $units
+            ->sortBy(fn ($unit) => $unit->base_price - $budget)
             ->first();
     }
 
