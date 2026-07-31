@@ -68,4 +68,29 @@ class MessageController extends Controller
 
         return redirect()->back()->with('success', 'Message sent!');
     }
+
+    public function latest(Request $request, Booking $booking)
+    {
+        if ($booking->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $afterId = (int) $request->integer('after_id', 0);
+
+        $messages = $booking->messages()
+            ->with('user:id,name')
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->take(50)
+            ->get()
+            ->map(fn ($m) => [
+                'id' => $m->id,
+                'user_id' => $m->user_id,
+                'name' => $m->user?->name ?? 'Unknown',
+                'message' => $m->message,
+                'created_at' => (int) $m->created_at->getTimestampMs(),
+            ]);
+
+        return response()->json(['success' => true, 'messages' => $messages]);
+    }
 }

@@ -26,7 +26,7 @@ class RealtimeChatService
         ];
 
         try {
-            Http::timeout(5)->put($url, $payload)->throw();
+            Http::connectTimeout(1)->timeout(2)->put($url, $payload)->throw();
             return true;
         } catch (\Throwable $e) {
             Log::warning('Firebase realtime publish failed: '.$e->getMessage(), [

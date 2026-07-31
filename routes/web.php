@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
 
     Route::get('/bookings/{booking}/messages', [CustomerMessageController::class, 'index'])->name('messages.index');
     Route::post('/bookings/{booking}/messages', [CustomerMessageController::class, 'store'])->name('messages.store');
+    Route::get('/bookings/{booking}/messages/latest', [CustomerMessageController::class, 'latest'])->name('messages.latest');
 
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::post('/disputes', [CustomerDisputeController::class, 'store'])->name('disputes.store');
@@ -200,6 +201,7 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
 
     Route::get('/bookings/{booking}/messages', [VendorMessageController::class, 'index'])->name('messages.index');
     Route::post('/bookings/{booking}/messages', [VendorMessageController::class, 'store'])->name('messages.store');
+    Route::get('/bookings/{booking}/messages/latest', [VendorMessageController::class, 'latest'])->name('messages.latest');
 
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/calendar/slots', [CalendarController::class, 'getSlots'])->name('calendar.slots');
@@ -243,6 +245,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/bookings/payments/{payment}/verify', [BookingVerificationController::class, 'verifyPayment'])->name('bookings.payments.verify');
     Route::get('/bookings/{booking}/messages', [AdminMessageController::class, 'index'])->name('messages.index');
     Route::post('/bookings/{booking}/messages', [AdminMessageController::class, 'store'])->name('messages.store');
+    Route::get('/bookings/{booking}/messages/latest', [AdminMessageController::class, 'latest'])->name('messages.latest');
 
     Route::get('/halls/{hall}/units/{unit}/extras', [AdminExtraServiceController::class, 'index'])->name('halls.units.extras.index');
     Route::post('/halls/{hall}/units/{unit}/extras', [AdminExtraServiceController::class, 'store'])->name('halls.units.extras.store');

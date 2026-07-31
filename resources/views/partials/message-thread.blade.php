@@ -92,6 +92,14 @@
     var mchatThread = document.getElementById('message-thread');
     var mchatNewPill = document.getElementById('mchat-newpill');
     var mchatLive = document.getElementById('mchat-live');
+    var mchatLastId = 0;
+    (function () {
+        var ids = document.querySelectorAll('#message-thread [data-msg-id]');
+        for (var i = 0; i < ids.length; i++) {
+            var n = parseInt(ids[i].getAttribute('data-msg-id'), 10);
+            if (n > mchatLastId) mchatLastId = n;
+        }
+    })();
     var mchatNearBottom = function () {
         return mchatThread.scrollHeight - mchatThread.scrollTop - mchatThread.clientHeight < 130;
     };
@@ -157,6 +165,8 @@
         if (el) el.classList.add('mchat-enter');
         if (atBottom) mchatScrollDown();
         else if (mchatNewPill) mchatNewPill.classList.remove('hidden');
+        var nid = parseInt(msg.id, 10);
+        if (nid > mchatLastId) mchatLastId = nid;
     }
 
     mchatThread.addEventListener('scroll', function () {
@@ -172,6 +182,7 @@
     var bookingId = {{ $booking->id }};
     var currentUserId = {{ auth()->id() }};
     var fbEnabled = false;
+    var endpoint = window.location.origin + window.location.pathname;
 
     try {
         var firebaseConfig = {
@@ -224,9 +235,9 @@
         clientIdInput.value = clientMsgId;
 
         var csrfToken = '{{ csrf_token() }}';
-        var endpoint = window.location.origin + window.location.pathname;
         fetch(endpoint, {
             method: 'POST',
+            keepalive: true,
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
             body: JSON.stringify({ message: text, _token: csrfToken, client_id: clientMsgId })
         }).then(function (r) {
@@ -274,5 +285,15 @@
             btn.innerHTML = '<i class="ti ti-send"></i> Send';
         });
     });
+
+    setInterval(function () {
+        fetch(endpoint + '/latest?after_id=' + mchatLastId, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.messages) return;
+                d.messages.forEach(function (m) { mchatAppend(m); });
+            })
+            .catch(function () {});
+    }, 3000);
 </script>
 @endpush
