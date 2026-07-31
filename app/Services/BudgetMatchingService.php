@@ -85,9 +85,9 @@ class BudgetMatchingService
         return $results;
     }
 
-    public function buildAutoPackage(float $budget, int $guestCount, ?string $eventType = null): array
+    public function buildAutoPackage(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null): array
     {
-        $hall = $this->pickHallUnit($budget, $guestCount, $eventType);
+        $hall = $this->pickHallUnit($budget, $guestCount, $eventType, $city);
         $tag = 'within_budget';
 
         if ($hall) {
@@ -100,7 +100,7 @@ class BudgetMatchingService
             $tag = 'services_only';
         }
 
-        $services = $this->greedyFill($remaining);
+        $services = $this->greedyFill($remaining, $city);
         $total = round(($hall ? $hall->base_price : 0) + $services->sum('price'), 2);
 
         return [
@@ -109,15 +109,21 @@ class BudgetMatchingService
             'services' => $services->values(),
             'total' => $total,
             'budget' => $budget,
+            'city' => $city,
             'tag' => $tag,
             'within_budget' => $total <= $budget,
         ];
     }
 
-    protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null): ?HallUnit
+    protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null): ?HallUnit
     {
         return HallUnit::with('hall.vendorProfile', 'extraServices')
-            ->whereHas('hall.vendorProfile', fn ($q) => $q->where('status', 'verified'))
+            ->whereHas('hall.vendorProfile', function ($q) use ($city) {
+                $q->where('status', 'verified');
+                if ($city) {
+                    $q->where('city', $city);
+                }
+            })
             ->where('min_capacity', '<=', $guestCount)
             ->where('max_capacity', '>=', $guestCount)
             ->get()
@@ -128,14 +134,19 @@ class BudgetMatchingService
             ->first();
     }
 
-    protected function greedyFill(float $budget): Collection
+    protected function greedyFill(float $budget, ?string $city = null): Collection
     {
         if ($budget <= 0) {
             return collect();
         }
 
         $listings = ServiceListing::with('serviceCategory', 'vendorProfile')
-            ->whereHas('vendorProfile', fn ($q) => $q->where('status', 'verified'))
+            ->whereHas('vendorProfile', function ($q) use ($city) {
+                $q->where('status', 'verified');
+                if ($city) {
+                    $q->where('city', $city);
+                }
+            })
             ->get()
             ->filter(fn ($l) => $l->price <= $budget);
 

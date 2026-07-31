@@ -70,15 +70,21 @@
                     <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
                     <h6 class="bm-step-title">Find a bundle in your budget</h6>
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label bm-label">Budget (PKR)</label>
                             <input type="number" id="bmBudgetAmount" class="form-control bm-input" min="1" placeholder="e.g. 500000">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label bm-label">Guests</label>
                             <input type="number" id="bmBudgetGuests" class="form-control bm-input" min="1" placeholder="e.g. 200">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label bm-label">City</label>
+                            <select id="bmBudgetCity" class="form-select bm-input">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label bm-label">Event Type</label>
                             <select id="bmBudgetEventType" class="form-select bm-input">
                                 <option value="">Any</option>
@@ -213,10 +219,22 @@
                 bmOptions = data;
                 renderPackageList();
                 renderCategoryList();
+                populateCities();
             })
             .catch(function () {
                 showToast('Could not load booking options.', 'error');
             });
+    }
+
+    function populateCities() {
+        var sel = document.getElementById('bmBudgetCity');
+        if (!sel || !bmOptions.cities || !bmOptions.cities.length) return;
+        bmOptions.cities.forEach(function (c) {
+            var opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            sel.appendChild(opt);
+        });
     }
 
     /* ---------- Package tab ---------- */
@@ -229,10 +247,11 @@
         }
         var html = '';
         bmOptions.packages.forEach(function (p) {
+            var vendorLine = p.vendor ? p.vendor.business_name + (p.vendor.city ? ' &middot; ' + p.vendor.city : '') : 'BeeG Events';
             html += '<div class="bm-package-item">' +
                 '<div class="bm-pkg-info">' +
                 '<div class="bm-pkg-title">' + p.title + '</div>' +
-                '<div class="bm-pkg-meta">' + (p.vendor ? p.vendor.business_name : 'BeeG Events') +
+                '<div class="bm-pkg-meta">' + vendorLine +
                 (p.event_type ? ' &middot; ' + p.event_type : '') +
                 ' &middot; ' + p.items.length + ' item(s)</div>' +
                 (p.description ? '<div class="bm-pkg-meta">' + p.description + '</div>' : '') +
@@ -293,7 +312,7 @@
                     '<input type="checkbox" class="form-check-input bm-service-check" data-id="' + l.id + '" data-price="' + l.price + '">' +
                     '<div style="flex:1;">' +
                     '<div style="font-weight:600;font-size:13px;color:var(--charcoal);">' + l.title + '</div>' +
-                    '<div style="font-size:11px;color:var(--text-muted);">' + (l.vendor || '') + '</div>' +
+                    '<div style="font-size:11px;color:var(--text-muted);"><i class="ti ti-map-pin"></i> ' + (l.vendor || '') + (l.city ? ' &middot; ' + l.city : '') + '</div>' +
                     '</div>' +
                     '<div style="font-size:13px;font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(l.price).toLocaleString() + '</div>' +
                     '</div>';
@@ -361,6 +380,7 @@
         var budget = document.getElementById('bmBudgetAmount').value;
         var guests = document.getElementById('bmBudgetGuests').value;
         var eventType = document.getElementById('bmBudgetEventType').value;
+        var city = document.getElementById('bmBudgetCity').value;
 
         if (!budget || !guests) { showToast('Please enter budget and guests.', 'warning'); return; }
 
@@ -368,6 +388,7 @@
         body.append('budget', budget);
         body.append('guest_count', guests);
         if (eventType) body.append('event_type', eventType);
+        if (city) body.append('city', city);
 
         var resultBox = document.getElementById('bmBudgetResult');
         resultBox.innerHTML = '<div class="bm-loading">Finding the best bundle...</div>';
@@ -411,14 +432,18 @@
         if (b.hall_unit) {
             var unit = b.hall_unit;
             var hallName = (unit.hall && unit.hall.name) ? unit.hall.name : 'Hall';
+            var hallCity = (unit.hall && unit.hall.vendor_profile && unit.hall.vendor_profile.city) ? unit.hall.vendor_profile.city : '';
             html += '<div class="bm-service-item" style="padding-left:0;padding-right:0;"><div style="flex:1;">' +
                 '<div style="font-weight:600;font-size:13px;color:var(--charcoal);"><i class="ti ti-building"></i> ' + hallName + ' - ' + (unit.unit_name || '') + '</div>' +
-                '<div style="font-size:11px;color:var(--text-muted);">Capacity: ' + unit.min_capacity + '-' + unit.max_capacity + ' guests</div>' +
+                '<div style="font-size:11px;color:var(--text-muted);"><i class="ti ti-map-pin"></i> Capacity: ' + unit.min_capacity + '-' + unit.max_capacity + ' guests' + (hallCity ? ' &middot; ' + hallCity : '') + '</div>' +
                 '</div><div style="font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(unit.base_price).toLocaleString() + '</div></div>';
         }
 
         (b.services || []).forEach(function (s) {
-            html += '<div class="bm-service-item" style="padding-left:0;padding-right:0;"><div style="flex:1;font-size:13px;color:var(--charcoal);">' + s.title + '</div>' +
+            var sCity = (s.vendor_profile && s.vendor_profile.city) ? s.vendor_profile.city : '';
+            html += '<div class="bm-service-item" style="padding-left:0;padding-right:0;"><div style="flex:1;font-size:13px;color:var(--charcoal);">' + s.title +
+                (sCity ? '<div style="font-size:11px;color:var(--text-muted);"><i class="ti ti-map-pin"></i> ' + sCity + '</div>' : '') +
+                '</div>' +
                 '<div style="font-size:13px;font-weight:700;color:var(--gold-dark);white-space:nowrap;">PKR ' + Number(s.price).toLocaleString() + '</div></div>';
         });
 
