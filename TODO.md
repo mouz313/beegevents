@@ -30,6 +30,7 @@
 ## Priority 4 — Content & Features Not Yet Complete
 
 - [x] **Add blog content** — 5 SEO-oriented posts seeded via `BlogPostSeeder` (wedding venue, budget, corporate checklist, marquee vs hall, caterer questions)
+- [x] **Book Now modal** — Package / Custom / Budget cards in one modal; budget card builds an auto bundle (within-budget hall → slightly-above → services-only) and adds it to cart; old `customer/budget-match` page kept as-is
 - [ ] **Budget → admin manual-quoting flow** — verified: free-text `notes` field exists in checkout ("Any special requirements..."), but the *budget → admin manual quote* flow is **not** implemented. Needs a design decision
 
 ## Priority 5 — Testing & Production Readiness

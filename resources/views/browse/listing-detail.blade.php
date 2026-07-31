@@ -16,6 +16,9 @@
                     <span style="font-size:20px;font-weight:700;color:var(--gold);">PKR {{ number_format($listing->price) }}</span>
                     <span style="font-size:13px;color:rgba(255,255,255,0.5);">/ {{ str_replace('_', ' ', $listing->price_unit) }}</span>
                 </div>
+                <button type="button" class="btn-gold mt-3" data-bs-toggle="modal" data-bs-target="#bookingModal" data-booking-mode="custom" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:600;">
+                    <i class="ti ti-calendar-plus"></i> Book Now
+                </button>
             </div>
         </div>
     </div>

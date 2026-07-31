@@ -18,6 +18,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BookingOptionsController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CorporateLeadController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\Vendor\HallUnitController;
 use App\Http\Controllers\Vendor\InquiryController as VendorInquiryController;
 use App\Http\Controllers\Vendor\MessageController as VendorMessageController;
 use App\Http\Controllers\Vendor\OnboardingController;
+use App\Http\Controllers\Vendor\PackageController as VendorPackageController;
 use App\Http\Controllers\Vendor\ProfileController as VendorProfile;
 use App\Http\Controllers\Vendor\ServiceListingController;
 use App\Http\Controllers\WebhookController;
@@ -106,6 +108,11 @@ Route::prefix('blog')->name('blog.')->controller(BlogController::class)->group(f
 
 Route::post('/inquiry', [InquiryController::class, 'store'])->name('inquiry.store')->middleware('throttle:5,60');
 
+Route::controller(BookingOptionsController::class)->group(function () {
+    Route::get('/booking/options', 'options')->name('booking.options');
+    Route::post('/booking/budget', 'budget')->name('booking.budget');
+});
+
 Route::controller(CorporateLeadController::class)->group(function () {
     Route::get('/corporate-inquiry', 'create')->name('corporate.leads.create');
     Route::post('/corporate-inquiry', 'store')->name('corporate.leads.store');
@@ -118,6 +125,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::post('/cart/add', [CartController::class, 'addItem'])->name('cart.add');
     Route::post('/cart/remove/{key}', [CartController::class, 'removeItem'])->name('cart.remove');
     Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+    Route::post('/cart/add-bundle', [CartController::class, 'addBundle'])->name('cart.add-bundle');
 
     Route::get('/checkout', [CustomerBookingController::class, 'checkout'])->name('checkout');
     Route::post('/bookings', [CustomerBookingController::class, 'store'])->name('bookings.store');
@@ -173,6 +181,11 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::post('/listings', [ServiceListingController::class, 'store'])->name('listings.store');
     Route::put('/listings/{serviceListing}', [ServiceListingController::class, 'update'])->name('listings.update');
     Route::delete('/listings/{serviceListing}', [ServiceListingController::class, 'destroy'])->name('listings.destroy');
+
+    Route::get('/packages', [VendorPackageController::class, 'index'])->name('packages.index');
+    Route::post('/packages', [VendorPackageController::class, 'store'])->name('packages.store');
+    Route::put('/packages/{package}', [VendorPackageController::class, 'update'])->name('packages.update');
+    Route::delete('/packages/{package}', [VendorPackageController::class, 'destroy'])->name('packages.destroy');
 
     Route::get('/bookings', [BookingResponseController::class, 'index'])->name('bookings.index');
     Route::post('/bookings/{bookingItem}/respond', [BookingResponseController::class, 'respond'])->name('bookings.respond');

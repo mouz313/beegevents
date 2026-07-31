@@ -100,6 +100,7 @@
                         @if($profile)
                             <a href="{{ route('vendor.halls.index') }}" class="btn btn-outline-primary">Manage Halls</a>
                             <a href="{{ route('vendor.listings.index') }}" class="btn btn-outline-success">Manage Services</a>
+                            <a href="{{ route('vendor.packages.index') }}" class="btn btn-outline-dark">Manage Packages</a>
                             <a href="{{ route('vendor.calendar') }}" class="btn btn-outline-info">Update Availability</a>
                             <a href="{{ route('vendor.inquiries.index') }}" class="btn btn-outline-warning">View Inquiries</a>
                             <a href="{{ route('vendor.profile.create') }}" class="btn btn-outline-secondary">Edit Profile</a>

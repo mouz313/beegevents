@@ -147,29 +147,83 @@ class BookingController extends Controller
         $commissionRate = config('commission.types.package', config('commission.default_rate', 10));
         $commissionAmount = round($package->total_price * ($commissionRate / 100), 2);
 
-        $booking = Booking::create([
-            'customer_id' => auth()->id(),
-            'booking_type' => 'package',
-            'event_date' => $validated['event_date'],
-            'event_type' => $validated['event_type'],
-            'total_price' => $package->total_price,
-            'commission_amount' => $commissionAmount,
-            'notes' => $validated['notes'] ?: 'Package: '.$package->title,
-        ]);
+        try {
+            $booking = DB::transaction(function () use ($package, $validated, $commissionAmount) {
+                foreach ($package->packageItems as $packageItem) {
+                    $itemable = $packageItem->itemable;
+                    if (! $itemable || $packageItem->itemable_type !== 'App\Models\HallUnit') {
+                        continue;
+                    }
 
-        foreach ($package->packageItems as $packageItem) {
-            $itemable = $packageItem->itemable;
-            if (! $itemable) {
-                continue;
+                    $conflict = AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
+                        ->where('resource_id', $itemable->id)
+                        ->where('date', $validated['event_date'])
+                        ->lockForUpdate()
+                        ->where(function ($q) {
+                            $q->whereIn('status', ['booked', 'blocked_offline'])
+                                ->orWhere(function ($held) {
+                                    $held->where('status', 'held')
+                                        ->where(function ($h) {
+                                            $h->whereNull('held_until')
+                                                ->orWhere('held_until', '>', now());
+                                        });
+                                });
+                        })
+                        ->first();
+
+                    if ($conflict) {
+                        throw new \RuntimeException(
+                            $itemable->unit_name.' is not available on '.$validated['event_date'].'.'
+                        );
+                    }
+                }
+
+                $booking = Booking::create([
+                    'customer_id' => auth()->id(),
+                    'booking_type' => 'package',
+                    'event_date' => $validated['event_date'],
+                    'event_type' => $validated['event_type'],
+                    'total_price' => $package->total_price,
+                    'commission_amount' => $commissionAmount,
+                    'notes' => $validated['notes'] ?: 'Package: '.$package->title,
+                ]);
+
+                $heldUntil = now()->addHours(24);
+
+                foreach ($package->packageItems as $packageItem) {
+                    $itemable = $packageItem->itemable;
+                    if (! $itemable) {
+                        continue;
+                    }
+
+                    BookingItem::create([
+                        'booking_id' => $booking->id,
+                        'itemable_type' => $packageItem->itemable_type,
+                        'itemable_id' => $packageItem->itemable_id,
+                        'vendor_profile_id' => $itemable->vendor_profile_id ?? $itemable->hall?->vendor_profile_id,
+                        'price' => $itemable->price ?? $itemable->base_price ?? 0,
+                    ]);
+
+                    if ($packageItem->itemable_type === 'App\Models\HallUnit') {
+                        AvailabilitySlot::create([
+                            'resource_type' => 'App\Models\HallUnit',
+                            'resource_id' => $itemable->id,
+                            'date' => $validated['event_date'],
+                            'status' => 'held',
+                            'booking_id' => $booking->id,
+                            'held_until' => $heldUntil,
+                        ]);
+                    }
+                }
+
+                return $booking;
+            });
+        } catch (\RuntimeException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 409);
             }
 
-            BookingItem::create([
-                'booking_id' => $booking->id,
-                'itemable_type' => $packageItem->itemable_type,
-                'itemable_id' => $packageItem->itemable_id,
-                'vendor_profile_id' => $itemable->vendor_profile_id,
-                'price' => $itemable->price ?? $itemable->base_price ?? 0,
-            ]);
+            return redirect()->back()->withErrors(['event_date' => $e->getMessage()])->withInput();
         }
 
         $this->sendBookingNotifications($booking);

@@ -5,6 +5,21 @@
 
 ---
 
+## 0. Book Now Modal — 2026-07-31 (new feature)
+
+Unified "Book Now" modal with 3 booking paths (Package / Custom / Budget):
+
+- [x] **Book Now button** in header (all users) + "Book Now" triggers on hall & listing detail pages; modal opens from any page (`resources/views/partials/booking-modal.blade.php`)
+- [x] **Package card** — public `GET /booking/options` returns packages (global + vendor-owned from verified vendors, `?hall_id` filters by hall) + categories/services; Book posts to existing `customer.packages.book`
+- [x] **Custom card** — category accordion of services with "Add Selected to Cart" + "Get Quote" (→ cart → checkout)
+- [x] **Budget card** — public `POST /booking/budget` uses new `BudgetMatchingService::buildAutoPackage()` cascade: within-budget hall → slightly-above hall (≤120%) → services-only fallback → tagged bundle → "Add Bundle to Cart"
+- [x] **Vendor packages** — `vendor_profile_id` added to `packages` (nullable = global); vendor "My Packages" CRUD (`Vendor\PackageController`, `vendor/packages` routes, nav + dashboard link); item picker limited to vendor's own units/listings
+- [x] **`CartController::addBundle()`** — `POST customer/cart/add-bundle` adds a whole bundle in one call (shared `resolveItemIntoCart()` helper with `addItem`)
+- [x] **Fixed package-booking integrity** — `bookPackage()` now uses `$itemable->hall?->vendor_profile_id` for hall units (was null → FK error), checks availability conflicts, and creates held slots like the cart flow
+- [x] Migrated `vendor_profile_id` on packages; all views compile; budget endpoint verified end-to-end (CSRF + JSON)
+
+---
+
 ## 0. Working Session — 2026-07-31 (audit fixes)
 
 Full code audit completed — all 13 findings fixed:

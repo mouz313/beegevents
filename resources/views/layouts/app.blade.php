@@ -66,6 +66,7 @@
             @if($role == 'vendor')
                 <li><a href="{{ route('vendor.halls.index') }}"><i class="ti ti-building"></i> Halls</a></li>
                 <li><a href="{{ route('vendor.listings.index') }}"><i class="ti ti-list-check"></i> Services</a></li>
+                <li><a href="{{ route('vendor.packages.index') }}"><i class="ti ti-gift"></i> Packages</a></li>
                 <li><a href="{{ route('vendor.bookings.index') }}"><i class="ti ti-calendar-event"></i> Bookings</a></li>
                 <li><a href="{{ route('vendor.inquiries.index') }}" class="{{ request()->routeIs('vendor.inquiries.*') ? 'active' : '' }}"><i class="ti ti-mail"></i> Inquiries</a></li>
             @endif
@@ -79,6 +80,9 @@
     </ul>
 
     <div class="header-right">
+        <button type="button" class="btn-header" data-bs-toggle="modal" data-bs-target="#bookingModal" style="border:none;cursor:pointer;">
+            <i class="ti ti-calendar-plus"></i> Book Now
+        </button>
         @auth
             <div class="user-dropdown">
                 <div class="dropdown-trigger" onclick="this.nextElementSibling.classList.toggle('show')">
@@ -221,6 +225,8 @@ function showToast(message, type) {
     setTimeout(function(){ if (t.parentNode) { t.classList.add('out'); setTimeout(function(){ t.remove(); }, 260); } }, 3500);
 }
 </script>
+@include('partials.booking-modal')
+
 @stack('scripts')
 </body>
 </html>

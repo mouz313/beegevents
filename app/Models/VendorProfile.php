@@ -28,6 +28,11 @@ class VendorProfile extends Model
         return $this->hasMany(ServiceListing::class);
     }
 
+    public function packages(): HasMany
+    {
+        return $this->hasMany(Package::class);
+    }
+
     public function bookingItems(): HasMany
     {
         return $this->hasMany(BookingItem::class);

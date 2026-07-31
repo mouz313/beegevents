@@ -41,6 +41,9 @@
                             </span>
                         </div>
                     </div>
+                    <button type="button" class="btn-gold mt-3" data-bs-toggle="modal" data-bs-target="#bookingModal" data-booking-mode="package" data-booking-hall="{{ $hall->id }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:600;">
+                        <i class="ti ti-calendar-plus"></i> Book Now
+                    </button>
                 @endif
             </div>
         </div>

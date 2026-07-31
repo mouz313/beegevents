@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\HallUnit;
 use App\Models\Package;
+use App\Models\ServiceListing;
+use Illuminate\Support\Collection;
 
 class BudgetMatchingService
 {
@@ -15,11 +17,12 @@ class BudgetMatchingService
             ->where('min_capacity', '<=', $guestCount)
             ->where('max_capacity', '>=', $guestCount)
             ->get()
-            ->filter(fn($unit) => $unit->base_price <= $budget)
+            ->filter(fn ($unit) => $unit->base_price <= $budget)
             ->map(function ($unit) use ($budget) {
                 $remaining = $budget - $unit->base_price;
-                $suggestedExtras = $unit->extraServices->filter(fn($extra) => $extra->price <= $remaining);
+                $suggestedExtras = $unit->extraServices->filter(fn ($extra) => $extra->price <= $remaining);
                 $totalWithExtras = $unit->base_price + $suggestedExtras->sum('price');
+
                 return [
                     'type' => 'unit',
                     'unit' => $unit,
@@ -42,7 +45,7 @@ class BudgetMatchingService
         }
 
         $packages = $packageQuery->get()
-            ->filter(fn($pkg) => $pkg->total_price <= $budget)
+            ->filter(fn ($pkg) => $pkg->total_price <= $budget)
             ->map(function ($pkg) {
                 $itemsBreakdown = $pkg->packageItems->map(function ($item) {
                     $modelClass = $item->itemable_type;
@@ -55,6 +58,7 @@ class BudgetMatchingService
                     } elseif ($instance && method_exists($instance, 'vendorProfile')) {
                         $vendorName = $instance->vendorProfile->business_name;
                     }
+
                     return [
                         'name' => $name,
                         'vendor' => $vendorName,
@@ -76,8 +80,99 @@ class BudgetMatchingService
 
         $results = array_merge($results, $packages);
 
-        usort($results, fn($a, $b) => $a['total_estimated'] <=> $b['total_estimated']);
+        usort($results, fn ($a, $b) => $a['total_estimated'] <=> $b['total_estimated']);
 
         return $results;
+    }
+
+    public function buildAutoPackage(float $budget, int $guestCount, ?string $eventType = null): array
+    {
+        $hall = $this->pickHallUnit($budget, $guestCount, $eventType);
+        $tag = 'within_budget';
+
+        if ($hall) {
+            $remaining = $budget - $hall->base_price;
+            if ($remaining < 0) {
+                $tag = 'slightly_above';
+            }
+        } else {
+            $remaining = $budget;
+            $tag = 'services_only';
+        }
+
+        $services = $this->greedyFill($remaining);
+        $total = round(($hall ? $hall->base_price : 0) + $services->sum('price'), 2);
+
+        return [
+            'status' => ($hall || $services->isNotEmpty()) ? 'matched' : 'none',
+            'hall_unit' => $hall,
+            'services' => $services->values(),
+            'total' => $total,
+            'budget' => $budget,
+            'tag' => $tag,
+            'within_budget' => $total <= $budget,
+        ];
+    }
+
+    protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null): ?HallUnit
+    {
+        return HallUnit::with('hall.vendorProfile', 'extraServices')
+            ->whereHas('hall.vendorProfile', fn ($q) => $q->where('status', 'verified'))
+            ->where('min_capacity', '<=', $guestCount)
+            ->where('max_capacity', '>=', $guestCount)
+            ->get()
+            ->filter(fn ($unit) => $unit->base_price <= $budget * 1.2)
+            ->sortBy(fn ($unit) => $unit->base_price <= $budget
+                ? abs($unit->base_price - $budget)
+                : abs($unit->base_price - $budget) + 1_000_000)
+            ->first();
+    }
+
+    protected function greedyFill(float $budget): Collection
+    {
+        if ($budget <= 0) {
+            return collect();
+        }
+
+        $listings = ServiceListing::with('serviceCategory', 'vendorProfile')
+            ->whereHas('vendorProfile', fn ($q) => $q->where('status', 'verified'))
+            ->get()
+            ->filter(fn ($l) => $l->price <= $budget);
+
+        $chosen = collect();
+        $remaining = $budget;
+        $usedCategories = collect();
+        $byCategory = $listings->groupBy('service_category_id');
+        $categoryIds = $byCategory->keys();
+
+        $progress = true;
+        while ($progress && $remaining > 0) {
+            $progress = false;
+            foreach ($categoryIds as $catId) {
+                if ($usedCategories->contains($catId)) {
+                    continue;
+                }
+
+                $pick = $byCategory[$catId]
+                    ->filter(fn ($l) => $l->price <= $remaining)
+                    ->sortBy('price')
+                    ->first();
+
+                if (! $pick) {
+                    continue;
+                }
+
+                $chosen->push($pick);
+                $usedCategories->push($catId);
+                $remaining -= $pick->price;
+                $progress = true;
+
+                if ($remaining <= 0) {
+                    break;
+                }
+            }
+        }
+
+        return $chosen;
     }
 }
