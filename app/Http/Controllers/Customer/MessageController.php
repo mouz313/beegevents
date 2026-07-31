@@ -37,7 +37,16 @@ class MessageController extends Controller
         app(RealtimeChatService::class)->publish($message);
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json([
+                'success' => true,
+                'message' => [
+                    'id' => $message->id,
+                    'user_id' => $message->user_id,
+                    'name' => $message->user?->name ?? 'Unknown',
+                    'message' => $message->message,
+                    'created_at' => (int) $message->created_at->getTimestampMs(),
+                ],
+            ]);
         }
 
         return redirect()->back()->with('success', 'Message sent!');

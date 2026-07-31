@@ -32,6 +32,9 @@
             <i class="ti ti-send"></i> Send
         </button>
     </form>
+    <div id="realtime-status" style="display:none;margin-top:8px;font-size:11px;color:var(--text-muted);background:var(--cream);border:1px dashed var(--gold-dark);border-radius:8px;padding:6px 10px;">
+        Real-time updates are off (Firebase not connected). Messages still save.
+    </div>
 </div>
 
 @push('scripts')
@@ -116,6 +119,12 @@
         console.warn('Firebase realtime chat unavailable:', e);
     }
 
+    if (!fbEnabled) {
+        console.warn('Firebase realtime chat not connected — live updates disabled.');
+        var rs = document.getElementById('realtime-status');
+        if (rs) rs.style.display = 'block';
+    }
+
     document.querySelector('.send-message-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         var form = this;
@@ -148,7 +157,11 @@
             if (!d) return;
             if (d.success) {
                 input.value = '';
-                if (!fbEnabled) location.reload();
+                if (d.message && d.message.id) {
+                    appendMsg(d.message);
+                } else if (!fbEnabled) {
+                    location.reload();
+                }
             } else {
                 notify('Failed to send message', 'error');
             }
