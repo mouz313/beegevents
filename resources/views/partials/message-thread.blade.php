@@ -38,6 +38,7 @@
 
     <form method="POST" action="{{ $route }}" class="mchat-form send-message-form">
         @csrf
+        <input type="hidden" name="client_id" id="mchat-client-id" value="">
         <input type="text" name="message" placeholder="Type your message…" required autocomplete="off"
                class="mchat-input" maxlength="2000">
         <button type="submit" class="mchat-send"><i class="ti ti-send"></i> Send</button>
@@ -211,6 +212,7 @@
         e.preventDefault();
         var form = this;
         var input = form.querySelector('input[name="message"]');
+        var clientIdInput = form.querySelector('input[name="client_id"]');
         var btn = form.querySelector('button');
         var text = input.value.trim();
         if (!text) return;
@@ -218,21 +220,34 @@
         btn.disabled = true;
         btn.innerHTML = '…';
 
+        var clientMsgId = 'cm-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+        clientIdInput.value = clientMsgId;
+
         var csrfToken = '{{ csrf_token() }}';
         var endpoint = window.location.origin + window.location.pathname;
         fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-            body: JSON.stringify({ message: text, _token: csrfToken })
+            body: JSON.stringify({ message: text, _token: csrfToken, client_id: clientMsgId })
         }).then(function (r) {
             var ct = (r.headers.get('content-type') || '');
+            if (r.redirected && r.url.indexOf('/login') !== -1) {
+                mchatNotify('Session expired — please login again', 'warning');
+                setTimeout(function () { location.href = r.url; }, 1500);
+                return null;
+            }
             if (r.status === 419 || r.status === 401) {
                 mchatNotify('Session expired — refreshing, please resend your message', 'warning');
                 setTimeout(function () { location.reload(); }, 1200);
                 return null;
             }
+            if (r.redirected) {
+                location.reload();
+                return null;
+            }
             if (!r.ok || ct.indexOf('application/json') === -1) {
-                mchatNotify('Network error — check your connection', 'error');
+                console.error('Message send failed:', r.status, ct);
+                mchatNotify('Network error (HTTP ' + r.status + ', ' + ct.split(';')[0] + ')', 'error');
                 return null;
             }
             return r.json();
@@ -248,8 +263,12 @@
             } else {
                 mchatNotify('Failed to send message', 'error');
             }
-        }).catch(function () {
-            mchatNotify('Network error — check your connection', 'error');
+        }).catch(function (err) {
+            console.error('Message send fetch rejected:', err);
+            mchatNotify('Network error — sending again without realtime', 'warning');
+            setTimeout(function () {
+                form.submit();
+            }, 400);
         }).finally(function () {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti ti-send"></i> Send';

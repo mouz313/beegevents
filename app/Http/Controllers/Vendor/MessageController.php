@@ -38,20 +38,29 @@ class MessageController extends Controller
 
         $request->validate(['message' => 'required|string|max:2000']);
 
-        $message = Message::create([
-            'booking_id' => $booking->id,
-            'user_id' => auth()->id(),
-            'message' => $request->message,
-        ]);
+        $clientId = $request->input('client_id');
 
-        app(RealtimeChatService::class)->publish($message);
+        $message = $clientId
+            ? Message::firstOrCreate(
+                ['booking_id' => $booking->id, 'client_id' => $clientId],
+                ['user_id' => auth()->id(), 'message' => $request->message]
+            )
+            : Message::create([
+                'booking_id' => $booking->id,
+                'user_id' => auth()->id(),
+                'message' => $request->message,
+            ]);
 
-        app(NotificationService::class)->notifyParticipants(
-            $booking,
-            auth()->id(),
-            'New message from '.auth()->user()->name,
-            $message->message,
-        );
+        if ($message->wasRecentlyCreated) {
+            app(RealtimeChatService::class)->publish($message);
+
+            app(NotificationService::class)->notifyParticipants(
+                $booking,
+                auth()->id(),
+                'New message from '.auth()->user()->name,
+                $message->message,
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

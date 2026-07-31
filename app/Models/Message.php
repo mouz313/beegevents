@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['booking_id', 'user_id', 'message'])]
+#[Fillable(['booking_id', 'user_id', 'message', 'client_id'])]
 class Message extends Model
 {
     use HasFactory;
