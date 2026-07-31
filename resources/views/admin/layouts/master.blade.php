@@ -29,8 +29,14 @@
             <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="ti ti-users"></i> Users
             </a>
-            <a href="{{ route('admin.vendors.index') }}" class="nav-link {{ request()->routeIs('admin.vendors.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.vendors.index') }}" class="nav-link {{ request()->routeIs('admin.vendors.*') && ! request()->routeIs('admin.vendors.pending') ? 'active' : '' }}">
                 <i class="ti ti-building-store"></i> Vendors
+                @if(\App\Models\VendorProfile::where('status', 'pending')->count() > 0)
+                    <span class="badge bg-warning">{{ \App\Models\VendorProfile::where('status', 'pending')->count() }}</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.vendors.pending') }}" class="nav-link {{ request()->routeIs('admin.vendors.pending') ? 'active' : '' }}">
+                <i class="ti ti-clock"></i> Pending Vendors
                 @if(\App\Models\VendorProfile::where('status', 'pending')->count() > 0)
                     <span class="badge bg-warning">{{ \App\Models\VendorProfile::where('status', 'pending')->count() }}</span>
                 @endif
@@ -54,15 +60,20 @@
                 @endif
             </a>
 
+            <div class="menu-label">Content</div>
+            <a href="{{ route('admin.blog.index') }}" class="nav-link {{ request()->routeIs('admin.blog.*') ? 'active' : '' }}">
+                <i class="ti ti-news"></i> Blog
+            </a>
+            <a href="{{ route('admin.leads.index') }}" class="nav-link {{ request()->routeIs('admin.leads.*') ? 'active' : '' }}">
+                <i class="ti ti-users-group"></i> Corporate Leads
+            </a>
+
             <div class="menu-label">Support</div>
             <a href="{{ route('admin.disputes.index') }}" class="nav-link {{ request()->routeIs('admin.disputes.*') ? 'active' : '' }}">
                 <i class="ti ti-alert-triangle"></i> Disputes
                 @if(\App\Models\Dispute::where('status', 'open')->count() > 0)
                     <span class="badge bg-danger">{{ \App\Models\Dispute::where('status', 'open')->count() }}</span>
                 @endif
-            </a>
-            <a href="{{ route('admin.leads.index') }}" class="nav-link {{ request()->routeIs('admin.leads.*') ? 'active' : '' }}">
-                <i class="ti ti-users-group"></i> Leads
             </a>
 
             <div class="menu-label">Site</div>

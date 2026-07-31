@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Message;
+use App\Services\RealtimeChatService;
 use Illuminate\Http\Request;
 
 class MessageController extends Controller
@@ -19,13 +20,15 @@ class MessageController extends Controller
     {
         $request->validate(['message' => 'required|string|max:2000']);
 
-        Message::create([
+        $message = Message::create([
             'booking_id' => $booking->id,
             'user_id' => auth()->id(),
             'message' => $request->message,
         ]);
 
-        if ($request->ajax()) {
+        app(RealtimeChatService::class)->publish($message);
+
+        if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['success' => true]);
         }
 
