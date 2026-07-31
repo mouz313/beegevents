@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:release-expired-holds')->everyFiveMinutes();
+Schedule::command('app:auto-complete-bookings')->dailyAt('02:00');

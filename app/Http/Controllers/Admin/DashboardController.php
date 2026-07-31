@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\CorporateLead;
+use App\Models\Dispute;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\VendorProfile;
-use App\Models\Booking;
-use App\Models\Dispute;
-use App\Models\CorporateLead;
-use App\Models\Payment;
 
 class DashboardController extends Controller
 {
@@ -26,6 +26,7 @@ class DashboardController extends Controller
             'completedBookings' => Booking::where('status', 'completed')->count(),
             'cancelledBookings' => Booking::where('status', 'cancelled')->count(),
             'totalRevenue' => Payment::where('status', 'received')->sum('amount'),
+            'totalCommission' => Booking::sum('commission_amount'),
             'openDisputes' => Dispute::where('status', 'open')->count(),
             'newLeads' => CorporateLead::where('status', 'new')->count(),
         ];

@@ -46,6 +46,7 @@ class PaymentController extends Controller
 
         try {
             $intent = $this->paymentService->createStripePaymentIntent($booking, $type, $amount);
+
             return response()->json([
                 'success' => true,
                 'client_secret' => $intent['client_secret'],
@@ -70,6 +71,19 @@ class PaymentController extends Controller
 
         try {
             $result = $this->paymentService->confirmStripePayment($request->payment_intent_id);
+
+            $metadata = $result['metadata'] ?? [];
+            if (($metadata['booking_id'] ?? null) != $booking->id) {
+                return response()->json(['success' => false, 'message' => 'This payment does not belong to the booking.'], 403);
+            }
+
+            $expectedAmount = $request->type === 'advance'
+                ? $this->paymentService->getAdvanceAmount($booking)
+                : $this->paymentService->getBalanceAmount($booking);
+
+            if (round((float) $result['amount'], 2) !== round($expectedAmount, 2)) {
+                return response()->json(['success' => false, 'message' => 'Payment amount does not match the booking.'], 422);
+            }
 
             if ($result['status'] === 'succeeded') {
                 $this->paymentService->recordPayment(
@@ -99,14 +113,23 @@ class PaymentController extends Controller
         $request->validate([
             'type' => 'required|in:advance,balance',
             'amount' => 'required|numeric|min:1',
+            'proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
+
+        $proofPath = null;
+        if ($request->hasFile('proof')) {
+            $proofPath = $request->file('proof')->store('payment-proofs', 'public');
+        }
 
         $this->paymentService->recordPayment(
             $booking,
             $request->type,
             $request->amount,
             'bank_transfer',
-            'pending'
+            'pending',
+            null,
+            null,
+            $proofPath
         );
 
         return redirect()->back()->with('success', 'Payment instruction recorded. Admin will verify after receipt.');

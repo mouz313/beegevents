@@ -56,7 +56,7 @@
         </div>
         <div class="stat-value">PKR {{ number_format($stats['totalRevenue']) }}</div>
         <div class="stat-change">
-            <span class="text-muted">Total collected</span>
+            <span class="up">Commission: PKR {{ number_format($stats['totalCommission']) }}</span>
         </div>
     </div>
 </div>

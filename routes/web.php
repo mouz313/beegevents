@@ -1,60 +1,68 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Admin\BookingVerificationController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CorporateLeadController as AdminCorporateLeadController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\DisputeController as AdminDisputeController;
+use App\Http\Controllers\Admin\ExtraServiceController as AdminExtraServiceController;
+use App\Http\Controllers\Admin\MessageController as AdminMessageController;
+use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\PayoutController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\VendorVerificationController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\VerificationController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\BrowseController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\BlogController;
-use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CorporateLeadController;
-use App\Http\Controllers\Vendor\OnboardingController;
-use App\Http\Controllers\Customer\DashboardController as CustomerDashboard;
-use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
-use App\Http\Controllers\Customer\ReviewController;
-use App\Http\Controllers\Customer\DisputeController as CustomerDisputeController;
 use App\Http\Controllers\Customer\BudgetMatchController;
-use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController;
+use App\Http\Controllers\Customer\CartController;
+use App\Http\Controllers\Customer\DashboardController as CustomerDashboard;
+use App\Http\Controllers\Customer\DisputeController as CustomerDisputeController;
 use App\Http\Controllers\Customer\MessageController as CustomerMessageController;
-use App\Http\Controllers\Vendor\DashboardController as VendorDashboard;
-use App\Http\Controllers\Vendor\ProfileController as VendorProfile;
-use App\Http\Controllers\Vendor\HallController;
-use App\Http\Controllers\Vendor\FloorController;
-use App\Http\Controllers\Vendor\HallUnitController;
-use App\Http\Controllers\Vendor\ServiceListingController;
+use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController;
+use App\Http\Controllers\Customer\ReviewController;
+use App\Http\Controllers\InquiryController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Vendor\BookingResponseController;
 use App\Http\Controllers\Vendor\CalendarController;
+use App\Http\Controllers\Vendor\DashboardController as VendorDashboard;
+use App\Http\Controllers\Vendor\ExtraServiceController as VendorExtraServiceController;
+use App\Http\Controllers\Vendor\FloorController;
+use App\Http\Controllers\Vendor\HallController;
+use App\Http\Controllers\Vendor\HallUnitController;
 use App\Http\Controllers\Vendor\InquiryController as VendorInquiryController;
 use App\Http\Controllers\Vendor\MessageController as VendorMessageController;
-use App\Http\Controllers\Vendor\ExtraServiceController as VendorExtraServiceController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
-use App\Http\Controllers\Admin\VendorVerificationController;
-use App\Http\Controllers\Admin\BookingVerificationController;
-use App\Http\Controllers\Admin\DisputeController as AdminDisputeController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\PackageController;
-use App\Http\Controllers\Admin\CorporateLeadController as AdminCorporateLeadController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\MessageController as AdminMessageController;
-use App\Http\Controllers\Admin\ExtraServiceController as AdminExtraServiceController;
+use App\Http\Controllers\Vendor\OnboardingController;
+use App\Http\Controllers\Vendor\ProfileController as VendorProfile;
+use App\Http\Controllers\Vendor\ServiceListingController;
+use App\Http\Controllers\WebhookController;
+use App\Models\Booking;
+use App\Models\Hall;
+use App\Models\Review;
+use App\Models\ServiceListing;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $stats = [
-        'vendors'  => \App\Models\VendorProfile::count(),
-        'listings' => \App\Models\ServiceListing::count(),
-        'bookings' => \App\Models\Booking::count(),
-        'reviews'  => \App\Models\Review::count(),
+        'vendors' => App\Models\VendorProfile::count(),
+        'listings' => ServiceListing::count(),
+        'bookings' => Booking::count(),
+        'reviews' => Review::count(),
     ];
-    $featuredHalls = \App\Models\Hall::with('vendorProfile', 'hallUnits')
+    $featuredHalls = Hall::with('vendorProfile', 'hallUnits')
         ->take(4)->get();
-    $featuredListings = \App\Models\ServiceListing::with('vendorProfile', 'serviceCategory')
+    $featuredListings = ServiceListing::with('vendorProfile', 'serviceCategory')
         ->take(4)->get();
-    $testimonials = \App\Models\Review::with('customer', 'vendorProfile')
+    $testimonials = Review::with('customer', 'vendorProfile')
         ->latest()->take(4)->get();
+
     return view('welcome', compact('stats', 'featuredHalls', 'featuredListings', 'testimonials'));
 });
 
@@ -89,12 +97,14 @@ Route::controller(BrowseController::class)->group(function () {
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
+Route::post('/webhook/stripe', [WebhookController::class, 'handleStripe'])->name('webhook.stripe');
+
 Route::prefix('blog')->name('blog.')->controller(BlogController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('/{blogPost}', 'show')->name('show');
 });
 
-Route::post('/inquiry', [\App\Http\Controllers\InquiryController::class, 'store'])->name('inquiry.store')->middleware('throttle:5,60');
+Route::post('/inquiry', [InquiryController::class, 'store'])->name('inquiry.store')->middleware('throttle:5,60');
 
 Route::controller(CorporateLeadController::class)->group(function () {
     Route::get('/corporate-inquiry', 'create')->name('corporate.leads.create');
@@ -111,6 +121,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
 
     Route::get('/checkout', [CustomerBookingController::class, 'checkout'])->name('checkout');
     Route::post('/bookings', [CustomerBookingController::class, 'store'])->name('bookings.store');
+    Route::post('/packages/{package}/book', [CustomerBookingController::class, 'bookPackage'])->name('packages.book');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [CustomerBookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/cancel', [CustomerBookingController::class, 'cancel'])->name('bookings.cancel');
@@ -208,6 +219,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/bookings/{booking}/complete', [BookingVerificationController::class, 'complete'])->name('bookings.complete');
     Route::post('/bookings/{booking}/cancel', [BookingVerificationController::class, 'cancel'])->name('bookings.cancel');
     Route::post('/bookings/{booking}/payment', [BookingVerificationController::class, 'recordPayment'])->name('bookings.payment');
+    Route::post('/bookings/payments/{payment}/verify', [BookingVerificationController::class, 'verifyPayment'])->name('bookings.payments.verify');
     Route::get('/bookings/{booking}/messages', [AdminMessageController::class, 'index'])->name('messages.index');
     Route::post('/bookings/{booking}/messages', [AdminMessageController::class, 'store'])->name('messages.store');
 
@@ -232,12 +244,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/packages/{package}', [PackageController::class, 'update'])->name('packages.update');
     Route::delete('/packages/{package}', [PackageController::class, 'destroy'])->name('packages.destroy');
 
+    Route::get('/payouts', [PayoutController::class, 'index'])->name('payouts.index');
+    Route::post('/payouts', [PayoutController::class, 'store'])->name('payouts.store');
+    Route::post('/payouts/{payout}/processed', [PayoutController::class, 'markProcessed'])->name('payouts.processed');
+
     Route::get('/leads', [AdminCorporateLeadController::class, 'index'])->name('leads.index');
     Route::get('/leads/{corporateLead}', [AdminCorporateLeadController::class, 'show'])->name('leads.show');
     Route::post('/leads/{corporateLead}/status', [AdminCorporateLeadController::class, 'updateStatus'])->name('leads.status');
     Route::delete('/leads/{corporateLead}', [AdminCorporateLeadController::class, 'destroy'])->name('leads.destroy');
 
-    Route::resource('/blog', \App\Http\Controllers\Admin\BlogController::class)->except('show')->names('blog');
+    Route::resource('/blog', App\Http\Controllers\Admin\BlogController::class)->except('show')->names('blog');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');

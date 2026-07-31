@@ -97,7 +97,22 @@
                                 <tr>
                                     <td>{{ ucfirst($payment->type) }}</td>
                                     <td>PKR {{ number_format($payment->amount) }}</td>
-                                    <td><span class="status-badge status-confirmed">{{ ucfirst($payment->status) }}</span></td>
+                                    <td>
+                                        @if($payment->proof_path)
+                                            <a href="{{ asset('storage/'.$payment->proof_path) }}" target="_blank" style="color:var(--gold-dark);font-size:12px;">
+                                                <i class="ti ti-file"></i> Proof
+                                            </a>
+                                        @else
+                                            <span style="color:var(--text-muted);font-size:12px;">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($payment->status === 'pending')
+                                            <button class="btn btn-gold btn-sm verify-payment" data-id="{{ $payment->id }}" style="font-size:11px;">Verify</button>
+                                        @else
+                                            <span class="status-badge status-confirmed">{{ ucfirst($payment->status) }}</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -201,6 +216,26 @@ document.getElementById('paymentForm')?.addEventListener('submit', function(e) {
             showToast('success', 'Payment Recorded', 'Payment has been recorded successfully.');
             setTimeout(() => location.reload(), 1200);
         }
+    });
+});
+
+document.querySelectorAll('.verify-payment').forEach(btn => {
+    btn.addEventListener('click', function() {
+        fetch('/admin/bookings/payments/' + this.dataset.id + '/verify', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', 'Payment Verified', 'Payment has been marked as received.');
+                setTimeout(() => location.reload(), 1200);
+            }
+        });
     });
 });
 </script>

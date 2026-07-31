@@ -20,7 +20,7 @@ class PaymentService
 
     public function createStripePaymentIntent(Booking $booking, string $type, float $amount): array
     {
-        if (!$this->stripe) {
+        if (! $this->stripe) {
             throw new \RuntimeException('Stripe is not configured. Set STRIPE_SECRET in .env');
         }
 
@@ -41,7 +41,7 @@ class PaymentService
 
     public function confirmStripePayment(string $paymentIntentId): array
     {
-        if (!$this->stripe) {
+        if (! $this->stripe) {
             throw new \RuntimeException('Stripe is not configured.');
         }
 
@@ -50,10 +50,11 @@ class PaymentService
         return [
             'status' => $intent->status,
             'amount' => $intent->amount / 100,
+            'metadata' => $intent->metadata->toArray(),
         ];
     }
 
-    public function recordPayment(Booking $booking, string $type, float $amount, string $method = 'manual', string $status = 'received', ?string $transactionId = null, ?array $gatewayResponse = null): Payment
+    public function recordPayment(Booking $booking, string $type, float $amount, string $method = 'manual', string $status = 'received', ?string $transactionId = null, ?array $gatewayResponse = null, ?string $proofPath = null): Payment
     {
         return Payment::create([
             'booking_id' => $booking->id,
@@ -63,6 +64,7 @@ class PaymentService
             'status' => $status,
             'received_by' => auth()->id(),
             'transaction_id' => $transactionId,
+            'proof_path' => $proofPath,
             'gateway_response' => $gatewayResponse ? json_encode($gatewayResponse) : null,
         ]);
     }

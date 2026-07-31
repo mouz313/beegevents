@@ -110,6 +110,36 @@
                 </div>
             </div>
         </div>
+
+        @if($profile)
+            <div class="col-md-6">
+                <div class="card" style="border:1px solid var(--border);border-radius:14px;">
+                    <div class="card-header" style="background:var(--cream);border-radius:14px 14px 0 0;">
+                        <h6 class="mb-0" style="font-weight:700;color:var(--charcoal);"><i class="ti ti-wallet"></i> My Earnings</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <div style="font-size:12px;color:var(--text-muted);">Total Earned</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--gold-dark);">PKR {{ number_format($stats['total_earned']) }}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:12px;color:var(--text-muted);">Paid Out</div>
+                                <div style="font-size:20px;font-weight:700;color:var(--green);">PKR {{ number_format($stats['payouts_paid']) }}</div>
+                            </div>
+                        </div>
+                        <hr style="border-color:var(--border);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div style="font-size:12px;color:var(--text-muted);">Currently Due</div>
+                                <div style="font-size:18px;font-weight:700;color:var(--charcoal);">PKR {{ number_format($stats['payout_due']) }}</div>
+                            </div>
+                            <span style="font-size:12px;color:var(--text-muted);">Payouts are processed after event completion.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

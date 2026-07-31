@@ -47,6 +47,12 @@
             <a href="{{ route('admin.packages.index') }}" class="nav-link {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}">
                 <i class="ti ti-box"></i> Packages
             </a>
+            <a href="{{ route('admin.payouts.index') }}" class="nav-link {{ request()->routeIs('admin.payouts.*') ? 'active' : '' }}">
+                <i class="ti ti-wallet"></i> Payouts
+                @if(\App\Models\Payout::where('status', 'pending')->count() > 0)
+                    <span class="badge bg-warning">{{ \App\Models\Payout::where('status', 'pending')->count() }}</span>
+                @endif
+            </a>
 
             <div class="menu-label">Support</div>
             <a href="{{ route('admin.disputes.index') }}" class="nav-link {{ request()->routeIs('admin.disputes.*') ? 'active' : '' }}">

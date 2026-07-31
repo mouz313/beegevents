@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\BookingStatusMail;
 use App\Models\Booking;
 use App\Models\Payment;
-use App\Models\AvailabilitySlot;
 use App\Services\CancellationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -23,12 +22,14 @@ class BookingVerificationController extends Controller
     public function index()
     {
         $bookings = Booking::with('customer', 'bookingItems')->latest()->paginate(20);
+
         return view('admin.bookings.index', compact('bookings'));
     }
 
     public function show(Booking $booking)
     {
         $booking->load('customer', 'bookingItems.vendorProfile', 'payments');
+
         return view('admin.bookings.show', compact('booking'));
     }
 
@@ -36,7 +37,10 @@ class BookingVerificationController extends Controller
     {
         $booking->update(['status' => 'verified']);
         $this->notifyCustomer($booking, 'Booking Verified', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been verified. We will confirm shortly.', route('customer.bookings.show', $booking));
-        if ($request->ajax()) return response()->json(['success' => true]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->back()->with('success', 'Booking verified!');
     }
 
@@ -44,7 +48,10 @@ class BookingVerificationController extends Controller
     {
         $booking->update(['status' => 'confirmed']);
         $this->notifyCustomer($booking, 'Booking Confirmed', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been confirmed! We look forward to serving you.', route('customer.bookings.show', $booking));
-        if ($request->ajax()) return response()->json(['success' => true]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->back()->with('success', 'Booking confirmed!');
     }
 
@@ -52,7 +59,10 @@ class BookingVerificationController extends Controller
     {
         $booking->update(['status' => 'completed']);
         $this->notifyCustomer($booking, 'Booking Completed', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been marked as completed. Please leave a review!', route('customer.bookings.show', $booking));
-        if ($request->ajax()) return response()->json(['success' => true]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->back()->with('success', 'Booking completed!');
     }
 
@@ -63,6 +73,7 @@ class BookingVerificationController extends Controller
         if ($request->ajax()) {
             return response()->json(['success' => true, 'refund' => $refundInfo]);
         }
+
         return redirect()->back()->with('success', 'Booking cancelled! Refund: PKR '.number_format($refundInfo['refund_amount']));
     }
 
@@ -83,8 +94,26 @@ class BookingVerificationController extends Controller
             'received_by' => auth()->id(),
         ]);
 
-        if ($request->ajax()) return response()->json(['success' => true, 'payment' => $payment]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'payment' => $payment]);
+        }
+
         return redirect()->back()->with('success', 'Payment recorded!');
+    }
+
+    public function verifyPayment(Request $request, Payment $payment)
+    {
+        if ($payment->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Payment is not pending.'], 422);
+        }
+
+        $payment->update(['status' => 'received', 'received_by' => auth()->id()]);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->back()->with('success', 'Payment verified!');
     }
 
     private function notifyCustomer(Booking $booking, string $subject, string $greeting, string $body, ?string $actionUrl = null): void

@@ -6,21 +6,22 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['resource_type', 'resource_id', 'date', 'time_slot', 'status', 'booking_id', 'notes', 'held_until'])]
-class AvailabilitySlot extends Model
+#[Fillable(['vendor_profile_id', 'booking_id', 'amount', 'method', 'status', 'processed_at', 'notes'])]
+class Payout extends Model
 {
     use HasFactory;
 
     protected $casts = [
-        'date' => 'date',
-        'held_until' => 'datetime',
+        'processed_at' => 'datetime',
     ];
 
-    public function resource(): MorphTo
+    /**
+     * @return BelongsTo<VendorProfile>
+     */
+    public function vendorProfile(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(VendorProfile::class);
     }
 
     /**

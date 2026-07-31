@@ -78,12 +78,16 @@
                                         <strong>Title:</strong> BeeG Events Pvt Ltd<br>
                                         <strong>IBAN:</strong> PK36HABB0012345678901
                                     </div>
-                                    <form method="POST" action="{{ route('customer.payments.manual', $booking) }}">
+                                    <form method="POST" action="{{ route('customer.payments.manual', $booking) }}" enctype="multipart/form-data">
                                         @csrf
                                         <input type="hidden" name="type" value="advance">
                                         <input type="hidden" name="amount" value="{{ $summary['advance_required'] }}">
+                                        <div class="mb-2">
+                                            <input type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf" class="form-control form-control-sm" style="font-size:13px;" required>
+                                            <small style="color:var(--text-muted);">Upload transfer receipt (JPG, PNG, PDF — max 5MB)</small>
+                                        </div>
                                         <button type="submit" class="btn-outline-gold" style="width:100%;padding:11px;font-size:14px;">
-                                            <i class="ti ti-building-bank"></i> I've Transferred the Advance
+                                            <i class="ti ti-building-bank"></i> Submit Advance Proof
                                         </button>
                                     </form>
                                 @endif
@@ -105,12 +109,16 @@
                                         <i class="ti ti-credit-card"></i> Pay with Card
                                     </button>
                                 @else
-                                    <form method="POST" action="{{ route('customer.payments.manual', $booking) }}">
+                                    <form method="POST" action="{{ route('customer.payments.manual', $booking) }}" enctype="multipart/form-data">
                                         @csrf
                                         <input type="hidden" name="type" value="balance">
                                         <input type="hidden" name="amount" value="{{ $summary['remaining'] }}">
+                                        <div class="mb-2">
+                                            <input type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf" class="form-control form-control-sm" style="font-size:13px;" required>
+                                            <small style="color:var(--text-muted);">Upload transfer receipt (JPG, PNG, PDF — max 5MB)</small>
+                                        </div>
                                         <button type="submit" class="btn-outline-gold" style="width:100%;padding:11px;font-size:14px;">
-                                            <i class="ti ti-building-bank"></i> I've Transferred the Balance
+                                            <i class="ti ti-building-bank"></i> Submit Balance Proof
                                         </button>
                                     </form>
                                 @endif

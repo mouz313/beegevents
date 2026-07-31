@@ -1,7 +1,42 @@
 # BeeG Events — Project Progress / Status Tracker
 
-> Updated: 2026-07-31
+> Updated: 2026-07-31 (after working session)
 > Stack: Laravel 13.23.0 · PHP 8.5.5 · MySQL (beeg_db) · Stripe
+
+---
+
+## 0. Working Session — 2026-07-31 (audit fixes)
+
+Full code audit completed — all 13 findings fixed:
+
+- [x] **#1/#2 Double-booking + blocked-date protection** — `BookingController::store()` now checks `booked` / `blocked_offline` / active `held` slots inside a `DB::transaction` with `lockForUpdate()`; friendly 409 error returned on conflict
+- [x] **#3 Commission** — new `config/commission.php` (default 10%, per-type override via env); `commission_amount` computed at booking creation; admin dashboard shows total commission
+- [x] **#4 Vendor payouts** — new `payouts` table + `Payout` model + `PayoutService` (earnings = item prices − proportional commission share); admin Payouts page (record / mark processed); vendor dashboard earnings card
+- [x] **#5 Reviews** — ownership + `completed` status + "vendor in booking" + duplicate-review checks
+- [x] **#6 Disputes** — ownership + allowed-statuses + duplicate-open-dispute checks
+- [x] **#7/#9 Vendor response** — ownership check on `BookingResponseController::respond()`; all-accepted → `discussing`, all-declined → cancelled + slots released; customer notified by email on every response
+- [x] **#8 Package booking** — `bookPackage()` in `BookingController` (`booking_type=package`), route `POST customer/packages/{package}/book`, "Book This Package" form on packages page
+- [x] **#10 Auto-complete** — new `app:auto-complete-bookings` command (confirmed bookings with past event date → completed), scheduled daily 02:00
+- [x] **#11 Emails on new booking** — customer + all vendors notified via `BookingStatusMail` when a booking is created
+- [x] **#12 Manual payment proof** — `proof_path` on payments; file upload in manual payment forms; admin proof link + Verify button (`POST admin/bookings/payments/{payment}/verify`)
+- [x] **#13 Dead `inquiry` code** — removed from `BrowseController` date lists; held/blocked/expired-hold slots now counted correctly in availability
+- [x] **#14 Payment intent ownership** — `confirmStripePayment()` returns metadata; controller verifies `booking_id` and exact amount before recording
+- [x] **#15 `held_until`** — set to `now + 24h` when holding a slot; `ReleaseExpiredHolds` query simplified
+- [x] Added `date`/`held_until` casts to `AvailabilitySlot`; `Payout` model casts
+- [x] 2 new migrations ran (`proof_path`, `payouts`); all blade views compile; scheduler commands verified
+
+---
+
+- [x] Fixed `php artisan db:show` on MariaDB — custom grammar `app/Database/MySqlGrammar.php` + enabled `intl` PHP extension
+- [x] Set `APP_DEBUG=false` in `.env`
+- [x] Deleted stray `nul` file
+- [x] Confirmed git repo + remote already initialized (commit `Project Start`)
+- [x] Replaced default README with real project documentation
+- [x] Created Stripe webhook endpoint (`POST /webhook/stripe`, `WebhookController`) + 2 tests
+- [x] Verified custom booking form: free-text `notes` exists; budget → admin manual-quoting flow missing (open item)
+- [x] Seeded 5 blog posts (`BlogPostSeeder`)
+- [x] Automated tests written (booking, payment, webhook) then **removed on request** — `tests/` folder deleted, `phpunit.xml` cleaned
+- [x] Documented scheduler cron + queue worker in README
 
 ---
 

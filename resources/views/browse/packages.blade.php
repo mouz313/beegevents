@@ -44,10 +44,23 @@
                     </div>
                 @endif
 
-                <div class="mt-3">
+                <div class="mt-3 d-flex align-items-center gap-3 flex-wrap">
                     <a href="{{ route('browse.index') }}?event_type={{ $package->event_type }}" class="btn-gold" style="padding:8px 20px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                         <i class="ti ti-search"></i> Browse Similar
                     </a>
+
+                    @auth
+                        @if(auth()->user()->role === 'customer')
+                            <form method="POST" action="{{ route('customer.packages.book', $package) }}" class="d-flex align-items-center gap-2" style="flex:1;justify-content:flex-end;">
+                                @csrf
+                                <input type="date" name="event_date" min="{{ date('Y-m-d', strtotime('+1 day')) }}" class="form-control form-control-sm" style="max-width:170px;font-size:13px;" required>
+                                <input type="hidden" name="event_type" value="{{ $package->event_type }}">
+                                <button type="submit" class="btn-gold" style="padding:8px 20px;font-size:13px;border:none;display:inline-flex;align-items:center;gap:6px;">
+                                    <i class="ti ti-gift"></i> Book This Package
+                                </button>
+                            </form>
+                        @endif
+                    @endauth
                 </div>
             </div>
         </div>
