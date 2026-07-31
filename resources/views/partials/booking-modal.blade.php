@@ -377,9 +377,18 @@
             headers: jsonHeaders(),
             body: body
         })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            renderBundle(data.bundle);
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; }); })
+        .then(function (res) {
+            if (res.data && res.data.bundle) {
+                renderBundle(res.data.bundle);
+            } else {
+                showToast((res.data && res.data.message) || 'Could not find a bundle. Please try again.', 'error');
+                resultBox.innerHTML = '';
+            }
+        })
+        .catch(function () {
+            showToast('Something went wrong. Please try again.', 'error');
+            resultBox.innerHTML = '';
         });
     });
 

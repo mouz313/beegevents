@@ -90,7 +90,7 @@ class BookingOptionsController extends Controller
         $bundle = $matcher->buildAutoPackage(
             (float) $validated['budget'],
             (int) $validated['guest_count'],
-            $validated['event_type'] ?: null
+            ($validated['event_type'] ?? null) ?: null
         );
 
         return response()->json(['bundle' => $bundle]);
