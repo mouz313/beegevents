@@ -44,6 +44,7 @@ class DemoDataSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'customer',
                 'phone' => $phone,
+                'email_verified_at' => now(),
             ]);
         }
 
@@ -71,13 +72,14 @@ class DemoDataSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'vendor',
                 'phone' => $phone,
+                'email_verified_at' => now(),
             ]);
             $vendorProfiles[] = VendorProfile::create([
                 'user_id' => $user->id,
                 'business_name' => $business,
                 'vendor_type' => $type,
                 'city' => $city,
-                'status' => $i < 10 ? 'verified' : ($i == 10 ? 'verified' : 'pending'),
+                'status' => 'verified',
                 'cancellation_policy' => 'Full refund if cancelled 7 days before the event. 50% refund if cancelled 3-7 days before. No refund within 3 days.',
             ]);
         }

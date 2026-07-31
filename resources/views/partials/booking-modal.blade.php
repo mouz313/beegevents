@@ -289,6 +289,9 @@
             } else {
                 showToast(res.data.message || 'Booking failed.', 'error');
             }
+        })
+        .catch(function () {
+            showToast('Could not book this package. Please try again.', 'error');
         });
     }
 
@@ -355,6 +358,9 @@
                 } else {
                     showToast('Could not add services to cart.', 'error');
                 }
+            })
+            .catch(function () {
+                showToast('Could not add services to cart. Please try again.', 'error');
             });
     }
 
@@ -372,6 +378,9 @@
                 } else {
                     showToast('Could not add services to cart.', 'error');
                 }
+            })
+            .catch(function () {
+                showToast('Could not add services to cart. Please try again.', 'error');
             });
     }
 
@@ -492,6 +501,9 @@
             } else {
                 showToast(res.data.message || 'Could not add bundle to cart.', 'error');
             }
+        })
+        .catch(function () {
+            showToast('Could not add bundle to cart. Please try again.', 'error');
         });
     }
 

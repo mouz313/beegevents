@@ -14,7 +14,7 @@ class BookingStatusMail extends Mailable
     use Queueable, SerializesModels;
 
     public Booking $booking;
-    public string $subject;
+    public $subject;
     public string $greeting;
     public string $body;
     public ?string $actionUrl;

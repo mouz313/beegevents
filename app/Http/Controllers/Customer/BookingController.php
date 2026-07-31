@@ -87,7 +87,7 @@ class BookingController extends Controller
                     'event_type' => $validated['event_type'],
                     'total_price' => $totalPrice,
                     'commission_amount' => $commissionAmount,
-                    'notes' => $validated['notes'],
+                    'notes' => $validated['notes'] ?? null,
                 ]);
 
                 $heldUntil = now()->addHours(24);
@@ -185,7 +185,7 @@ class BookingController extends Controller
                     'event_type' => $validated['event_type'],
                     'total_price' => $package->total_price,
                     'commission_amount' => $commissionAmount,
-                    'notes' => $validated['notes'] ?: 'Package: '.$package->title,
+                    'notes' => ($validated['notes'] ?? null) ?: 'Package: '.$package->title,
                 ]);
 
                 $heldUntil = now()->addHours(24);

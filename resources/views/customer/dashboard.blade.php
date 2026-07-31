@@ -78,8 +78,8 @@
                         </thead>
                         <tbody>
                             @foreach($bookings as $booking)
-                                <tr>
-                                    <td style="padding:12px 20px;font-size:13px;">#{{ $booking->id }}</td>
+                                <tr style="cursor:pointer;" onclick="window.location.href='{{ route('customer.bookings.show', $booking) }}'">
+                                    <td style="padding:12px 20px;font-size:13px;"><a href="{{ route('customer.bookings.show', $booking) }}" style="color:var(--gold-dark);font-weight:600;text-decoration:none;">#{{ $booking->id }}</a></td>
                                     <td style="padding:12px 20px;font-size:13px;">{{ $booking->event_date->format('M d, Y') }}</td>
                                     <td style="padding:12px 20px;font-size:13px;">{{ ucfirst($booking->event_type) }}</td>
                                     <td style="padding:12px 20px;">
