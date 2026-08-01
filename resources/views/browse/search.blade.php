@@ -84,10 +84,17 @@
                         </div>
                         <div class="card-title" style="font-size:14px;">{{ $hall->name }}</div>
                         <div class="card-meta" style="font-size:12px;"><i class="ti ti-map-pin"></i> {{ $hall->address }}</div>
-                        @if($hall->hallUnits->count() > 0)
+                        @php
+                            $unitMin = $hall->hallUnits->count() > 0 ? $hall->hallUnits->min('base_price') : null;
+                            $unitMax = $hall->hallUnits->count() > 0 ? $hall->hallUnits->max('base_price') : null;
+                            $startPrice = $hall->vendorProfile->starting_price ?? $unitMin;
+                        @endphp
+                        @if($startPrice)
                             <div class="card-price-row">
-                                <span class="card-price">PKR {{ number_format($hall->hallUnits->min('base_price')) }}</span>
-                                <span class="card-price-sub">– PKR {{ number_format($hall->hallUnits->max('base_price')) }}</span>
+                                <span class="card-price">PKR {{ number_format($startPrice) }}</span>
+                                @if($unitMax && $unitMax > $startPrice)
+                                    <span class="card-price-sub">– PKR {{ number_format($unitMax) }}</span>
+                                @endif
                             </div>
                         @endif
                     </a>

@@ -8,100 +8,86 @@
 @section('og_description', 'Pakistan\'s trusted event planning platform connecting customers with verified venues and services.')
 
 @section('hero')
+@php
+    $slides = [
+        1 => [
+            'eyebrow' => 'Trusted vendors, verified bookings',
+            'icon' => 'ti ti-shield-check-filled',
+            'heading' => setting('hero_slide_1_heading', 'Plan Your Perfect Event in Minutes'),
+            'subtext' => 'Pakistan\'s most trusted platform for weddings, engagements, and corporate events. Browse verified venues and services, match your budget, and book with confidence.',
+            'image' => setting('hero_slide_1_image'),
+        ],
+        2 => [
+            'eyebrow' => '12+ verified vendors across Pakistan',
+            'icon' => 'ti ti-building-store',
+            'heading' => setting('hero_slide_2_heading', 'Find Trusted Vendors for Your Event'),
+            'subtext' => 'From banquet halls to caterers, photographers to decorators — discover top-rated vendors with real reviews and transparent pricing.',
+            'image' => setting('hero_slide_2_image'),
+        ],
+        3 => [
+            'eyebrow' => 'Every booking admin-verified',
+            'icon' => 'ti ti-shield-check-filled',
+            'heading' => setting('hero_slide_3_heading', 'Book With Confidence, Every Time'),
+            'subtext' => 'Our team reviews and confirms every booking. Real-time availability, secure payments, and dedicated support — so you can focus on celebrating.',
+            'image' => setting('hero_slide_3_image'),
+        ],
+    ];
+@endphp
 <section class="hero-section" data-animate>
     <div class="hero-carousel">
-        <div class="hero-slide active">
-            <div class="slide-bg"></div>
+        @foreach($slides as $i => $slide)
+        <div class="hero-slide {{ $loop->first ? 'active' : '' }}">
+            <div class="slide-bg {{ $slide['image'] ? 'has-image' : '' }}"
+                 @if($slide['image']) style="background-image:linear-gradient(rgba(247,247,245,0.9), rgba(247,247,245,0.9)), url('{{ asset('storage/'.$slide['image']) }}');background-size:cover;background-position:center;" @endif>
+            </div>
             <div class="floating-dot"></div>
             <div class="floating-dot"></div>
             <div class="floating-dot"></div>
             <div class="floating-dot"></div>
             <div class="slide-inner">
                 <div class="eyebrow">
-                    <i class="ti ti-shield-check-filled"></i> Trusted vendors, verified bookings
+                    <i class="{{ $slide['icon'] }}"></i> {{ $slide['eyebrow'] }}
                 </div>
-                <h1>Plan Your Perfect<br><span>Event</span> in Minutes</h1>
-                <p class="subtext">
-                    Pakistan's most trusted platform for weddings, engagements, and corporate events.
-                    Browse verified venues and services, match your budget, and book with confidence.
-                </p>
+                <h1>{{ $slide['heading'] }}</h1>
+                <p class="subtext">{{ $slide['subtext'] }}</p>
                 <div class="cta-group">
                     @auth
                         <a href="{{ route(auth()->user()->role . '.dashboard') }}" class="btn-primary">
                             <i class="ti ti-dashboard"></i> Go to Dashboard
                         </a>
                     @else
-                        <a href="{{ route('register') }}" class="btn-primary">
-                            <i class="ti ti-sparkles"></i> Plan My Event
-                        </a>
-                        <a href="{{ route('register') }}?role=vendor" class="btn-secondary">
-                            <i class="ti ti-building-store"></i> List Your Business
-                        </a>
+                        @if($loop->first)
+                            <a href="{{ route('register') }}" class="btn-primary">
+                                <i class="ti ti-sparkles"></i> Plan My Event
+                            </a>
+                            <a href="{{ route('register') }}?role=vendor" class="btn-secondary">
+                                <i class="ti ti-building-store"></i> List Your Business
+                            </a>
+                        @elseif($i === 2)
+                            <a href="{{ route('browse.index') }}" class="btn-primary">
+                                <i class="ti ti-building-arch"></i> Browse Vendors
+                            </a>
+                            <a href="{{ route('register') }}?role=vendor" class="btn-secondary">
+                                <i class="ti ti-building-store"></i> Join as Vendor
+                            </a>
+                        @else
+                            <a href="{{ route('register') }}" class="btn-primary">
+                                <i class="ti ti-sparkles"></i> Get Started Free
+                            </a>
+                            <a href="{{ route('login') }}" class="btn-secondary">
+                                <i class="ti ti-login"></i> Sign In
+                            </a>
+                        @endif
                     @endauth
                 </div>
             </div>
         </div>
-        <div class="hero-slide">
-            <div class="slide-bg"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="slide-inner">
-                <div class="eyebrow">
-                    <i class="ti ti-building-store"></i> 12+ verified vendors across Pakistan
-                </div>
-                <h1>Find Trusted<br><span>Vendors</span> for Your Event</h1>
-                <p class="subtext">
-                    From banquet halls to caterers, photographers to decorators — discover top-rated
-                    vendors with real reviews and transparent pricing.
-                </p>
-                <div class="cta-group">
-                    <a href="{{ route('browse.index') }}" class="btn-primary">
-                        <i class="ti ti-building-arch"></i> Browse Vendors
-                    </a>
-                    <a href="{{ route('register') }}?role=vendor" class="btn-secondary">
-                        <i class="ti ti-building-store"></i> Join as Vendor
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="hero-slide">
-            <div class="slide-bg"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="floating-dot"></div>
-            <div class="slide-inner">
-                <div class="eyebrow">
-                    <i class="ti ti-shield-check-filled"></i> Every booking admin-verified
-                </div>
-                <h1>Book With<br><span>Confidence</span>, Every Time</h1>
-                <p class="subtext">
-                    Our team reviews and confirms every booking. Real-time availability, secure payments,
-                    and dedicated support — so you can focus on celebrating.
-                </p>
-                <div class="cta-group">
-                    @auth
-                        <a href="{{ route(auth()->user()->role . '.dashboard') }}" class="btn-primary">
-                            <i class="ti ti-dashboard"></i> Go to Dashboard
-                        </a>
-                    @else
-                        <a href="{{ route('register') }}" class="btn-primary">
-                            <i class="ti ti-sparkles"></i> Get Started Free
-                        </a>
-                        <a href="{{ route('login') }}" class="btn-secondary">
-                            <i class="ti ti-login"></i> Sign In
-                        </a>
-                    @endauth
-                </div>
-            </div>
-        </div>
+        @endforeach
     </div>
     <div class="hero-dots">
-        <button class="active" data-slide="0"></button>
-        <button data-slide="1"></button>
-        <button data-slide="2"></button>
+        @foreach($slides as $i => $slide)
+            <button class="{{ $loop->first ? 'active' : '' }}" data-slide="{{ $loop->index }}"></button>
+        @endforeach
     </div>
 </section>
 @endsection

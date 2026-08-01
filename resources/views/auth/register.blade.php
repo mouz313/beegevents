@@ -17,12 +17,21 @@
                     <form method="POST" action="{{ route('register') }}">
                         @csrf
 
-                        <div class="mb-3">
-                            <label for="name" class="form-label" style="font-size:13px;font-weight:600;color:var(--charcoal);">Full Name</label>
-                            <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required style="border-color:var(--border);border-radius:10px;padding:10px 14px;font-size:14px;">
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label" style="font-size:13px;font-weight:600;color:var(--charcoal);">First Name</label>
+                                <input id="first_name" type="text" class="form-control @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name') }}" required style="border-color:var(--border);border-radius:10px;padding:10px 14px;font-size:14px;">
+                                @error('first_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label" style="font-size:13px;font-weight:600;color:var(--charcoal);">Last Name</label>
+                                <input id="last_name" type="text" class="form-control @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name') }}" required style="border-color:var(--border);border-radius:10px;padding:10px 14px;font-size:14px;">
+                                @error('last_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -57,14 +66,15 @@
 
                         <div class="mb-4">
                             <label class="form-label" style="font-size:13px;font-weight:600;color:var(--charcoal);">I want to join as</label>
+                            @php $selectedRole = old('role', $role ?? 'customer'); @endphp
                             <div class="d-flex gap-3">
-                                <label class="d-flex align-items-center gap-2 p-3" style="border:2px solid var(--border);border-radius:10px;cursor:pointer;flex:1;transition:all 0.15s;{{ old('role', 'customer') == 'customer' ? 'border-color:var(--gold);background:var(--light-honey);' : '' }}" onclick="this.querySelector('input').checked=true;document.querySelectorAll('.role-option').forEach(e=>{e.style.borderColor='var(--border)';e.style.background='none'});this.style.borderColor='var(--gold)';this.style.background='var(--light-honey)'">
-                                    <input class="form-check-input" type="radio" name="role" value="customer" {{ old('role', 'customer') == 'customer' ? 'checked' : '' }} style="display:none;">
+                                <label class="d-flex align-items-center gap-2 p-3 role-option" style="border:2px solid {{ $selectedRole == 'customer' ? 'var(--gold)' : 'var(--border)' }};border-radius:10px;cursor:pointer;flex:1;transition:all 0.15s;{{ $selectedRole == 'customer' ? 'background:var(--light-honey);' : '' }}">
+                                    <input class="form-check-input" type="radio" name="role" value="customer" {{ $selectedRole == 'customer' ? 'checked' : '' }} style="display:none;">
                                     <i class="ti ti-user" style="font-size:20px;color:var(--gold-dark);"></i>
                                     <div><strong style="font-size:14px;color:var(--charcoal);display:block;">Customer</strong><span style="font-size:11px;color:var(--text-muted);">Book events &amp; services</span></div>
                                 </label>
-                                <label class="d-flex align-items-center gap-2 p-3 role-option" style="border:2px solid var(--border);border-radius:10px;cursor:pointer;flex:1;transition:all 0.15s;{{ old('role') == 'vendor' ? 'border-color:var(--gold);background:var(--light-honey);' : '' }}" onclick="this.querySelector('input').checked=true;document.querySelectorAll('.role-option').forEach(e=>{e.style.borderColor='var(--border)';e.style.background='none'});this.style.borderColor='var(--gold)';this.style.background='var(--light-honey)'">
-                                    <input class="form-check-input" type="radio" name="role" value="vendor" {{ old('role') == 'vendor' ? 'checked' : '' }} style="display:none;">
+                                <label class="d-flex align-items-center gap-2 p-3 role-option" style="border:2px solid {{ $selectedRole == 'vendor' ? 'var(--gold)' : 'var(--border)' }};border-radius:10px;cursor:pointer;flex:1;transition:all 0.15s;{{ $selectedRole == 'vendor' ? 'background:var(--light-honey);' : '' }}">
+                                    <input class="form-check-input" type="radio" name="role" value="vendor" {{ $selectedRole == 'vendor' ? 'checked' : '' }} style="display:none;">
                                     <i class="ti ti-building-store" style="font-size:20px;color:var(--gold-dark);"></i>
                                     <div><strong style="font-size:14px;color:var(--charcoal);display:block;">Vendor</strong><span style="font-size:11px;color:var(--text-muted);">List your services</span></div>
                                 </label>
@@ -87,3 +97,19 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.querySelectorAll('.role-option').forEach(function (opt) {
+    opt.addEventListener('click', function () {
+        document.querySelectorAll('.role-option').forEach(function (e) {
+            e.style.borderColor = 'var(--border)';
+            e.style.background = 'none';
+        });
+        opt.querySelector('input').checked = true;
+        opt.style.borderColor = 'var(--gold)';
+        opt.style.background = 'var(--light-honey)';
+    });
+});
+</script>
+@endpush

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Vendor;
 use App\Helpers\ImageHelper;
 use App\Http\Controllers\Controller;
 use App\Models\VendorProfile;
+use App\Services\VendorSpecService;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
@@ -21,7 +22,7 @@ class ProfileController extends Controller
             'business_name' => 'required|string|max:255',
             'vendor_type' => 'required|in:hall,farmhouse,decor,catering,photography,dj,car,other',
             'city' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'cancellation_policy' => 'nullable|string',
             'cancel_free_days' => 'nullable|integer|min:0',
@@ -33,7 +34,7 @@ class ProfileController extends Controller
             'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-        ]);
+        ] + VendorSpecService::rulesFor($request->vendor_type));
 
         $data = [
             'user_id' => auth()->id(),
@@ -63,6 +64,8 @@ class ProfileController extends Controller
 
         $profile = VendorProfile::create($data);
 
+        VendorSpecService::save($profile, $request);
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'profile' => $profile]);
         }
@@ -78,7 +81,7 @@ class ProfileController extends Controller
             'business_name' => 'required|string|max:255',
             'vendor_type' => 'required|in:hall,farmhouse,decor,catering,photography,dj,car,other',
             'city' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'cancellation_policy' => 'nullable|string',
             'cancel_free_days' => 'nullable|integer|min:0',
@@ -90,7 +93,7 @@ class ProfileController extends Controller
             'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-        ]);
+        ] + VendorSpecService::rulesFor($request->vendor_type));
 
         $data = $request->only('business_name', 'vendor_type', 'city', 'phone', 'address', 'cancellation_policy', 'cancel_free_days', 'cancel_refund_percent', 'bank_name', 'bank_account_title', 'bank_account_number', 'bank_iban');
 
@@ -105,6 +108,8 @@ class ProfileController extends Controller
         }
 
         $vendorProfile->update($data);
+
+        VendorSpecService::save($vendorProfile, $request);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'profile' => $vendorProfile]);

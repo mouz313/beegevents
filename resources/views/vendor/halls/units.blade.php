@@ -1,30 +1,39 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Manage Hall Units - ' . $hall->name)
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ $hall->name }} - Units</h2>
+<div class="container vendor-page">
+    <div class="vendor-page-head">
         <div>
-            <a href="{{ route('vendor.halls.floors.index', $hall) }}" class="btn btn-outline-info btn-sm">Manage Floors</a>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#unitModal">Add Unit</button>
+            <h2 class="vendor-page-title">{{ $hall->name }} <span style="color:var(--gold-dark);">—</span> Units</h2>
+            <div class="vendor-page-sub">Add and manage the bookable units of your hall.</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('vendor.halls.floors.index', $hall) }}" class="btn-outline-gold" style="padding:8px 18px;font-size:12px;">Manage Floors</a>
+            <button class="btn-gold" data-bs-toggle="modal" data-bs-target="#unitModal" style="padding:8px 18px;font-size:12px;"><i class="ti ti-plus"></i> Add Unit</button>
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Floor</th>
-                    <th>Capacity</th>
-                    <th>Base Price</th>
-                    <th>Decor</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="profile-card">
+        <div class="card-header-custom compact">
+            <div class="card-head-icon"><i class="ti ti-building-arch"></i></div>
+            <h4>Hall <span>Units</span></h4>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            <div class="table-responsive">
+                <table class="table vendor-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Floor</th>
+                            <th>Capacity</th>
+                            <th>Base Price</th>
+                            <th>Decor</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                 @foreach($units as $unit)
                     <tr id="unit-{{ $unit->id }}">
                         <td>{{ $unit->unit_name }}</td>
@@ -33,19 +42,21 @@
                         <td>PKR {{ number_format($unit->base_price) }}</td>
                         <td>{{ ucfirst($unit->decor_type) }}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-info" onclick="showExtras({{ $unit->id }})"><i class="ti ti-package"></i> Extras</button>
-                            <button class="btn btn-sm btn-outline-primary edit-unit" data-id="{{ $unit->id }}" data-unit_name="{{ $unit->unit_name }}" data-floor_id="{{ $unit->floor_id }}" data-min_capacity="{{ $unit->min_capacity }}" data-max_capacity="{{ $unit->max_capacity }}" data-menu_summary="{{ $unit->menu_summary }}" data-decor_type="{{ $unit->decor_type }}" data-base_price="{{ $unit->base_price }}">Edit</button>
+                            <button class="btn btn-sm btn-outline-gold" onclick="showExtras({{ $unit->id }})"><i class="ti ti-package"></i> Extras</button>
+                            <button class="btn btn-sm btn-outline-gold edit-unit" data-id="{{ $unit->id }}" data-unit_name="{{ $unit->unit_name }}" data-floor_id="{{ $unit->floor_id }}" data-min_capacity="{{ $unit->min_capacity }}" data-max_capacity="{{ $unit->max_capacity }}" data-menu_summary="{{ $unit->menu_summary }}" data-decor_type="{{ $unit->decor_type }}" data-base_price="{{ $unit->base_price }}">Edit</button>
                             <button class="btn btn-sm btn-outline-danger delete-unit" data-id="{{ $unit->id }}">Delete</button>
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
+                </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Extra Services Modal -->
-<div class="modal fade" id="extrasModal" tabindex="-1">
+<div class="modal fade vendor-modal" id="extrasModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -62,14 +73,14 @@
                     @csrf
                     <input type="hidden" id="extras_unit_id">
                     <div class="mb-2">
-                        <input type="text" class="form-control" id="extra_name" name="name" placeholder="Service name (e.g. Extra Table)" required>
+                        <input type="text" class="form-control input-custom" id="extra_name" name="name" placeholder="Service name (e.g. Extra Table)" required>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-2">
-                            <input type="number" step="0.01" class="form-control" id="extra_price" name="price" placeholder="Price" required min="0">
+                            <input type="number" step="0.01" class="form-control input-custom" id="extra_price" name="price" placeholder="Price" required min="0">
                         </div>
                         <div class="col-md-6 mb-2">
-                            <select class="form-select" id="extra_price_unit" name="price_unit">
+                            <select class="form-select input-custom" id="extra_price_unit" name="price_unit">
                                 <option value="per_person">Per Person</option>
                                 <option value="per_hour">Per Hour</option>
                                 <option value="flat">Flat Rate</option>
@@ -77,7 +88,7 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-sm btn-primary">Add Service</button>
+                    <button type="submit" class="btn-gold" style="padding:8px 18px;font-size:13px;">Add Service</button>
                 </form>
             </div>
         </div>
@@ -85,7 +96,7 @@
 </div>
 
 <!-- Unit Modal -->
-<div class="modal fade" id="unitModal" tabindex="-1">
+<div class="modal fade vendor-modal" id="unitModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="unitForm">
@@ -97,12 +108,12 @@
                 <div class="modal-body">
                     <input type="hidden" id="unit_id">
                     <div class="mb-3">
-                        <label class="form-label">Unit Name</label>
-                        <input type="text" class="form-control" id="unit_name" name="unit_name" required>
+                        <label class="form-label-custom">Unit Name <span style="color:var(--red);">*</span></label>
+                        <input type="text" class="form-control input-custom" id="unit_name" name="unit_name" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Floor</label>
-                        <select class="form-select" id="floor_id" name="floor_id">
+                        <label class="form-label-custom">Floor</label>
+                        <select class="form-select input-custom" id="floor_id" name="floor_id">
                             <option value="">No Floor</option>
                             @foreach($floors as $floor)
                                 <option value="{{ $floor->id }}">{{ $floor->floor_label }}</option>
@@ -111,34 +122,34 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Min Capacity</label>
-                            <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="1" required>
+                            <label class="form-label-custom">Min Capacity <span style="color:var(--red);">*</span></label>
+                            <input type="number" class="form-control input-custom" id="min_capacity" name="min_capacity" min="1" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Max Capacity</label>
-                            <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="1" required>
+                            <label class="form-label-custom">Max Capacity <span style="color:var(--red);">*</span></label>
+                            <input type="number" class="form-control input-custom" id="max_capacity" name="max_capacity" min="1" required>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Base Price (PKR)</label>
-                        <input type="number" step="0.01" class="form-control" id="base_price" name="base_price" min="0" required>
+                        <label class="form-label-custom">Base Price (PKR) <span style="color:var(--red);">*</span></label>
+                        <input type="number" step="0.01" class="form-control input-custom" id="base_price" name="base_price" min="0" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Decor Type</label>
-                        <select class="form-select" id="decor_type" name="decor_type">
+                        <label class="form-label-custom">Decor Type</label>
+                        <select class="form-select input-custom" id="decor_type" name="decor_type">
                             <option value="fixed">Fixed</option>
                             <option value="outsourced">Outsourced</option>
                             <option value="customizable">Customizable</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Menu Summary</label>
-                        <textarea class="form-control" id="menu_summary" name="menu_summary" rows="2"></textarea>
+                        <label class="form-label-custom">Menu Summary</label>
+                        <textarea class="form-control input-custom" id="menu_summary" name="menu_summary" rows="2"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="unitSubmitBtn">Save</button>
+                    <button type="button" class="btn-outline-gold" data-bs-dismiss="modal" style="padding:8px 18px;font-size:13px;">Cancel</button>
+                    <button type="submit" class="btn-gold" id="unitSubmitBtn" style="padding:8px 18px;font-size:13px;">Save</button>
                 </div>
             </form>
         </div>

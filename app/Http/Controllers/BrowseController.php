@@ -234,6 +234,7 @@ class BrowseController extends Controller
         $eventType = $request->get('event_type');
         $city = $request->get('city');
         $maxBudget = $request->get('max_budget');
+        $minPrice = $request->get('min_price');
         $guests = $request->get('guests');
 
         // ---- Halls ----
@@ -253,15 +254,37 @@ class BrowseController extends Controller
         }
 
         if ($maxBudget) {
-            $hallsQuery->whereHas('hallUnits', function ($q) use ($maxBudget) {
-                $q->where('base_price', '<=', (int) $maxBudget);
+            $budget = (int) $maxBudget;
+            $hallsQuery->where(function ($q) use ($budget) {
+                $q->whereHas('vendorProfile', function ($p) use ($budget) {
+                    $p->where('starting_price', '<=', $budget);
+                })->orWhereHas('hallUnits', function ($u) use ($budget) {
+                    $u->where('base_price', '<=', $budget);
+                });
+            });
+        }
+
+        if ($minPrice) {
+            $min = (int) $minPrice;
+            $hallsQuery->where(function ($q) use ($min) {
+                $q->whereHas('vendorProfile', function ($p) use ($min) {
+                    $p->where('starting_price', '>=', $min);
+                })->orWhereHas('hallUnits', function ($u) use ($min) {
+                    $u->where('base_price', '>=', $min);
+                });
             });
         }
 
         if ($guests) {
-            $hallsQuery->whereHas('hallUnits', function ($q) use ($guests) {
-                $q->where('max_capacity', '>=', (int) $guests)
-                    ->where('min_capacity', '<=', (int) $guests);
+            $g = (int) $guests;
+            $hallsQuery->where(function ($q) use ($g) {
+                $q->whereHas('vendorProfile', function ($p) use ($g) {
+                    $p->where('min_capacity', '<=', $g)
+                        ->where('max_capacity', '>=', $g);
+                })->orWhereHas('hallUnits', function ($u) use ($g) {
+                    $u->where('max_capacity', '>=', $g)
+                        ->where('min_capacity', '<=', $g);
+                });
             });
         }
 
@@ -312,7 +335,31 @@ class BrowseController extends Controller
         }
 
         if ($maxBudget) {
-            $listingsQuery->where('price', '<=', (int) $maxBudget);
+            $budget = (int) $maxBudget;
+            $listingsQuery->where(function ($q) use ($budget) {
+                $q->where('price', '<=', $budget)
+                    ->orWhereHas('vendorProfile', function ($p) use ($budget) {
+                        $p->where('starting_price', '<=', $budget);
+                    });
+            });
+        }
+
+        if ($minPrice) {
+            $min = (int) $minPrice;
+            $listingsQuery->where(function ($q) use ($min) {
+                $q->where('price', '>=', $min)
+                    ->orWhereHas('vendorProfile', function ($p) use ($min) {
+                        $p->where('starting_price', '>=', $min);
+                    });
+            });
+        }
+
+        if ($guests) {
+            $g = (int) $guests;
+            $listingsQuery->whereHas('vendorProfile', function ($p) use ($g) {
+                $p->where('min_capacity', '<=', $g)
+                    ->where('max_capacity', '>=', $g);
+            });
         }
 
         if ($eventType) {
@@ -350,6 +397,6 @@ class BrowseController extends Controller
             return response()->json(compact('query', 'date', 'eventType', 'halls', 'listings'));
         }
 
-        return view('browse.search', compact('query', 'date', 'eventType', 'city', 'maxBudget', 'guests', 'halls', 'listings'));
+        return view('browse.search', compact('query', 'date', 'eventType', 'city', 'maxBudget', 'minPrice', 'guests', 'halls', 'listings'));
     }
 }

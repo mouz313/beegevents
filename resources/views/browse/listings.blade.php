@@ -64,6 +64,17 @@
                             <span class="card-price">PKR {{ number_format($listing->price) }}</span>
                             <span class="card-price-unit">/ {{ str_replace('_', ' ', $listing->price_unit) }}</span>
                         </div>
+                        @php $vp = $listing->vendorProfile; @endphp
+                        @if($vp && ($vp->starting_price || $vp->years_experience))
+                            <div class="card-footer-info">
+                                @if($vp->starting_price)
+                                    <span><i class="ti ti-tag"></i> From PKR {{ number_format($vp->starting_price) }}</span>
+                                @endif
+                                @if($vp->years_experience)
+                                    <span><i class="ti ti-clock"></i> {{ $vp->years_experience }}+ yrs</span>
+                                @endif
+                            </div>
+                        @endif
                     </a>
                     <div class="d-flex gap-2 mt-3">
                         <a href="{{ route('browse.listing', $listing) }}" class="btn-outline-gold btn-sm">Details</a>

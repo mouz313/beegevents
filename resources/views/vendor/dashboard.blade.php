@@ -1,13 +1,71 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Vendor Dashboard')
 
+@push('styles')
+<style>
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 8px 0 24px;
+}
+.dash-header h2 {
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--charcoal);
+    margin: 0;
+}
+.dash-header h2 span { color: var(--gold); }
+.dash-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+}
+.action-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 18px 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: white;
+    color: var(--charcoal);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.18s;
+    height: 100%;
+}
+.action-tile i { font-size: 22px; color: var(--gold-dark); }
+.action-tile:hover {
+    background: var(--light-honey);
+    border-color: var(--gold);
+    color: var(--gold-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212,160,23,0.12);
+    text-decoration: none;
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Vendor Dashboard</h2>
+<div>
+    <div class="dash-header">
+        <div>
+            <h2>Vendor <span>Dashboard</span></h2>
+            <p class="dash-sub">Welcome back{{ $profile ? ', ' . $profile->business_name : '' }} — manage your business from here.</p>
         </div>
+        @if($profile)
+            <a href="{{ route('vendor.profile.create') }}" class="btn-outline-gold" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:9px 20px;">
+                <i class="ti ti-settings"></i> Edit Profile
+            </a>
+        @endif
     </div>
 
     @if(!$profile || $profile->status == 'pending')
@@ -91,52 +149,72 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">Quick Actions</div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        @if($profile)
-                            <a href="{{ route('vendor.halls.index') }}" class="btn btn-outline-primary">Manage Halls</a>
-                            <a href="{{ route('vendor.listings.index') }}" class="btn btn-outline-success">Manage Services</a>
-                            <a href="{{ route('vendor.packages.index') }}" class="btn btn-outline-dark">Manage Packages</a>
-                            <a href="{{ route('vendor.calendar') }}" class="btn btn-outline-info">Update Availability</a>
-                            <a href="{{ route('vendor.inquiries.index') }}" class="btn btn-outline-warning">View Inquiries</a>
-                            <a href="{{ route('vendor.profile.create') }}" class="btn btn-outline-secondary">Edit Profile</a>
-                        @else
-                            <a href="{{ route('vendor.profile.create') }}" class="btn btn-primary">Create Vendor Profile</a>
-                        @endif
-                    </div>
+            <div class="vendor-card h-100" style="padding:24px;background:white;border:1px solid var(--border);border-radius:16px;">
+                <h6 style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--charcoal);">
+                    <i class="ti ti-bolt" style="color:var(--gold);"></i> Quick Actions
+                </h6>
+                <div class="row g-2">
+                    @if($profile)
+                        <div class="col-6">
+                            <a href="{{ route('vendor.halls.index') }}" class="action-tile"><i class="ti ti-building"></i><span>Manage Halls</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.listings.index') }}" class="action-tile"><i class="ti ti-list-check"></i><span>Manage Services</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.packages.index') }}" class="action-tile"><i class="ti ti-gift"></i><span>Manage Packages</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.menu.index') }}" class="action-tile"><i class="ti ti-cookie"></i><span>Manage Menu</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.calendar') }}" class="action-tile"><i class="ti ti-calendar-plus"></i><span>Availability</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.bookings.index') }}" class="action-tile"><i class="ti ti-calendar-event"></i><span>Bookings</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.inquiries.index') }}" class="action-tile"><i class="ti ti-mail"></i><span>Inquiries</span></a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ route('vendor.onboarding') }}" class="action-tile"><i class="ti ti-rocket"></i><span>Onboarding</span></a>
+                        </div>
+                    @else
+                        <div class="col-12">
+                            <a href="{{ route('vendor.profile.create') }}" class="action-tile" style="flex-direction:row;padding:20px;">
+                                <i class="ti ti-plus-circle"></i><span>Create Vendor Profile</span>
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
 
         @if($profile)
             <div class="col-md-6">
-                <div class="card" style="border:1px solid var(--border);border-radius:14px;">
-                    <div class="card-header" style="background:var(--cream);border-radius:14px 14px 0 0;">
-                        <h6 class="mb-0" style="font-weight:700;color:var(--charcoal);"><i class="ti ti-wallet"></i> My Earnings</h6>
+                <div class="vendor-card h-100" style="padding:24px;background:white;border:1px solid var(--border);border-radius:16px;">
+                    <h6 style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--charcoal);">
+                        <i class="ti ti-wallet" style="color:var(--gold);"></i> My Earnings
+                    </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div style="font-size:12px;color:var(--text-muted);">Total Earned</div>
+                            <div style="font-size:24px;font-weight:800;color:var(--gold-dark);">PKR {{ number_format($stats['total_earned']) }}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:12px;color:var(--text-muted);">Paid Out</div>
+                            <div style="font-size:20px;font-weight:700;color:var(--green);">PKR {{ number_format($stats['payouts_paid']) }}</div>
+                        </div>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <div style="font-size:12px;color:var(--text-muted);">Total Earned</div>
-                                <div style="font-size:24px;font-weight:800;color:var(--gold-dark);">PKR {{ number_format($stats['total_earned']) }}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:12px;color:var(--text-muted);">Paid Out</div>
-                                <div style="font-size:20px;font-weight:700;color:var(--green);">PKR {{ number_format($stats['payouts_paid']) }}</div>
-                            </div>
+                    <hr style="border-color:var(--border);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div style="font-size:12px;color:var(--text-muted);">Currently Due</div>
+                            <div style="font-size:18px;font-weight:700;color:var(--charcoal);">PKR {{ number_format($stats['payout_due']) }}</div>
                         </div>
-                        <hr style="border-color:var(--border);">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div style="font-size:12px;color:var(--text-muted);">Currently Due</div>
-                                <div style="font-size:18px;font-weight:700;color:var(--charcoal);">PKR {{ number_format($stats['payout_due']) }}</div>
-                            </div>
-                            <span style="font-size:12px;color:var(--text-muted);">Payouts are processed after event completion.</span>
-                        </div>
+                        <span style="font-size:12px;color:var(--text-muted);">Payouts are processed after event completion.</span>
                     </div>
                 </div>
             </div>

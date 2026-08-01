@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link rel="stylesheet" href="{{ asset('assets/css/browse.css') }}">
     <link rel="canonical" href="{{ url()->current() }}">
+    @stack('styles')
     @stack('structured-data')
     @verbatim
     <script type="application/ld+json">
@@ -37,8 +38,12 @@
 
 <div id="preloader">
     <div class="pl-ring"></div>
-    <div class="pl-logo">B</div>
-    <div class="pl-text">BeeG Events</div>
+    @if(setting('site_logo'))
+        <img src="{{ asset('storage/'.setting('site_logo')) }}" alt="{{ setting('site_name', 'BeeG Events') }}" class="pl-logo-img">
+    @else
+        <div class="pl-logo">B</div>
+    @endif
+    <div class="pl-text">{{ setting('site_name', 'BeeG Events') }}</div>
 </div>
 
 <header class="app-header">
@@ -47,8 +52,12 @@
             <i class="ti ti-menu-2"></i>
         </button>
         <a href="{{ url('/') }}" class="logo">
-            <div class="logo-icon">B</div>
-            <div class="logo-text">Bee<span>G</span></div>
+            @if(setting('site_logo'))
+                <img src="{{ asset('storage/'.setting('site_logo')) }}" alt="{{ setting('site_name', 'BeeG Events') }}" class="header-logo-img">
+            @else
+                <div class="logo-icon">B</div>
+                <div class="logo-text">Bee<span>G</span></div>
+            @endif
         </a>
     </div>
 
@@ -102,7 +111,6 @@
             </div>
         @else
             <a href="{{ route('login') }}" class="btn-ghost-header">Login</a>
-            <a href="{{ route('register') }}" class="btn-header">Register</a>
         @endauth
     </div>
 </header>
@@ -128,7 +136,11 @@
 <footer class="app-footer">
     <div class="footer-grid">
         <div class="footer-brand">
-            <div class="logo-text">Bee<span>G</span></div>
+            @if(setting('site_logo'))
+                <img src="{{ asset('storage/'.setting('site_logo')) }}" alt="{{ setting('site_name', 'BeeG Events') }}" class="footer-logo-img">
+            @else
+                <div class="logo-text">Bee<span>G</span></div>
+            @endif
             <p>Pakistan's trusted event planning platform connecting customers with verified venues and services for weddings, engagements, and corporate events.</p>
             <div class="footer-social">
                 <a href="#"><i class="ti ti-brand-facebook"></i></a>
@@ -225,6 +237,17 @@ function showToast(message, type) {
     t.querySelector('.toast-close').onclick = function(){ t.classList.add('out'); setTimeout(function(){ t.remove(); }, 260); };
     setTimeout(function(){ if (t.parentNode) { t.classList.add('out'); setTimeout(function(){ t.remove(); }, 260); } }, 3500);
 }
+
+(function () {
+    var header = document.querySelector('.app-header');
+    if (header) {
+        var onScroll = function () {
+            header.classList.toggle('scrolled', window.scrollY > 10);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    }
+})();
 </script>
 @include('partials.booking-modal')
 

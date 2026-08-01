@@ -1,32 +1,37 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Availability Calendar')
 
 @section('content')
-<div class="container">
-    <h2 class="mb-4" style="color:var(--charcoal);font-weight:700;">Availability Calendar</h2>
+<div class="container vendor-page">
+    <div class="vendor-page-head">
+        <div>
+            <h2 class="vendor-page-title">Availability Calendar</h2>
+            <div class="vendor-page-sub">Block dates &amp; hours when your units are unavailable.</div>
+        </div>
+    </div>
 
     @if($hallUnits->count() > 0)
         <div class="row">
             <div class="col-md-4">
-                <div class="card mb-3" style="border:1px solid var(--border);border-radius:14px;">
-                    <div class="card-body p-4">
+                <div class="profile-card mb-3">
+                    <div class="card-body-custom">
                         <h5 style="font-weight:600;margin-bottom:16px;">Block Dates &amp; Hours</h5>
                         <div class="mb-3">
-                            <label class="form-label" style="font-size:13px;font-weight:600;">Hall Unit</label>
-                            <select class="form-select" id="unitSelect" style="border-color:var(--border);border-radius:8px;">
+                            <label class="form-label-custom">Hall Unit</label>
+                            <select class="form-select input-custom" id="unitSelect">
                                 @foreach($hallUnits as $unit)
                                     <option value="{{ $unit->id }}">{{ $unit->hall->name }} - {{ $unit->unit_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" style="font-size:13px;font-weight:600;">Date</label>
-                            <input type="date" class="form-control" id="datePicker" min="{{ date('Y-m-d') }}" style="border-color:var(--border);border-radius:8px;">
+                            <label class="form-label-custom">Date</label>
+                            <input type="date" class="form-control input-custom" id="datePicker" min="{{ date('Y-m-d') }}">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" style="font-size:13px;font-weight:600;">Hour (24h)</label>
-                            <select class="form-select" id="hourSlot" style="border-color:var(--border);border-radius:8px;">
+                            <label class="form-label-custom">Hour (24h)</label>
+                            <select class="form-select input-custom" id="hourSlot">
                                 <option value="">All Day / No specific hour</option>
                                 @for($h = 0; $h < 24; $h++)
                                     <option value="{{ $h }}">{{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00 - {{ str_pad(($h+1) % 24, 2, '0', STR_PAD_LEFT) }}:00</option>
@@ -34,15 +39,15 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" style="font-size:13px;font-weight:600;">Notes (optional)</label>
-                            <textarea class="form-control" id="blockNotes" rows="2" style="border-color:var(--border);border-radius:8px;font-size:13px;" placeholder="e.g. Maintenance"></textarea>
+                            <label class="form-label-custom">Notes (optional)</label>
+                            <textarea class="form-control input-custom" id="blockNotes" rows="2" placeholder="e.g. Maintenance"></textarea>
                         </div>
                         <button class="btn-gold w-100" id="blockDate" style="border:none;padding:10px;">Mark as Unavailable</button>
                     </div>
                 </div>
 
-                <div class="card" style="border:1px solid var(--border);border-radius:14px;">
-                    <div class="card-body p-4">
+                <div class="profile-card">
+                    <div class="card-body-custom">
                         <h5 style="font-weight:600;margin-bottom:12px;">Legend</h5>
                         <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
                             <span><span style="display:inline-block;width:12px;height:12px;background:#E6F7ED;border-radius:3px;margin-right:6px;"></span> Available</span>
@@ -58,15 +63,15 @@
                 </div>
             </div>
             <div class="col-md-8">
-                <div class="card" style="border:1px solid var(--border);border-radius:14px;">
-                    <div class="card-body p-4">
+                <div class="profile-card">
+                    <div class="card-body-custom">
                         <div id="slotInfo" class="text-center text-muted" style="padding:40px 0;">
                             <i class="ti ti-calendar-search" style="font-size:36px;opacity:0.3;display:block;margin-bottom:8px;"></i>
                             Select a unit and date to see availability.
                         </div>
                         <div id="slotDetails" style="display:none;">
                             <div id="slotList" style="margin-bottom:12px;"></div>
-                            <button class="btn btn-outline-secondary btn-sm" id="unblockDate" style="display:none;">
+                            <button class="btn-outline-gold btn-sm" id="unblockDate" style="display:none;padding:6px 14px;font-size:12px;">
                                 <i class="ti ti-unlock"></i> Unblock selected
                             </button>
                         </div>
@@ -75,7 +80,7 @@
             </div>
         </div>
     @else
-        <div class="card" style="border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center;">
+        <div class="profile-card" style="padding:40px;text-align:center;">
             <i class="ti ti-building-off" style="font-size:36px;color:var(--text-muted);opacity:0.3;display:block;margin-bottom:8px;"></i>
             <p style="color:var(--text-muted);">No hall units found. <a href="{{ route('vendor.halls.index') }}" style="color:var(--gold-dark);">Add halls and units first.</a></p>
         </div>

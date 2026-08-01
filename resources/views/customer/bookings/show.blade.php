@@ -10,6 +10,12 @@
             <span style="font-size:13px;color:var(--text-muted);">{{ ucfirst($booking->event_type) }} · {{ \Carbon\Carbon::parse($booking->event_date)->format('F d, Y') }}</span>
         </div>
         <div style="display:flex;gap:8px;">
+            <a href="{{ route('customer.bookings.download', $booking) }}" target="_blank" style="background:var(--cream);color:var(--charcoal);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);">
+                <i class="ti ti-download"></i> Download PDF
+            </a>
+            <a href="{{ route('customer.bookings.invoice', $booking) }}" target="_blank" style="background:var(--cream);color:var(--charcoal);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);">
+                <i class="ti ti-file-invoice"></i> Invoice
+            </a>
             @if($booking->status != 'cancelled' && $booking->status != 'completed')
                 <a href="{{ route('customer.bookings.payment', $booking) }}" style="background:var(--gold);color:var(--charcoal);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                     <i class="ti ti-credit-card"></i> Pay
@@ -23,6 +29,37 @@
     </div>
 
     <div class="row">
+        @if($booking->hasPendingOffer())
+            <div class="col-12 mb-3">
+                <div style="border:1px solid var(--gold);background:var(--light-honey);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div>
+                        <strong style="color:var(--charcoal);font-size:15px;"><i class="ti ti-tag"></i> New Price Offer</strong>
+                        <p style="margin:4px 0 0;font-size:13px;color:var(--gold-dark);">
+                            Our team has proposed a new price of <strong>PKR {{ number_format($booking->price_offer) }}</strong> for this booking.
+                            @if($booking->price_offer_note)
+                                <br><span style="color:var(--text-muted);">"{{ $booking->price_offer_note }}"</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <form method="POST" action="{{ route('customer.bookings.price-offer.accept', $booking) }}">
+                            @csrf
+                            <button type="submit" style="background:var(--gold);color:var(--charcoal);border:none;padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Accept Offer</button>
+                        </form>
+                        <form method="POST" action="{{ route('customer.bookings.price-offer.decline', $booking) }}">
+                            @csrf
+                            <button type="submit" style="background:#fff;color:var(--text-muted);border:1px solid var(--border);padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Decline</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @elseif($booking->price_offer_status == 'declined' && $booking->price_offer !== null)
+            <div class="col-12 mb-3">
+                <div style="border:1px solid var(--border);background:var(--cream);border-radius:12px;padding:12px 18px;font-size:13px;color:var(--text-muted);">
+                    <i class="ti ti-circle-off"></i> Price offer of <strong>PKR {{ number_format($booking->price_offer) }}</strong> was declined.
+                </div>
+            </div>
+        @endif
         <div class="col-lg-8">
             <div class="card" style="border:1px solid var(--border);border-radius:14px;margin-bottom:20px;">
                 <div class="card-body p-4">
@@ -85,12 +122,23 @@
                     @php
                         $advancePaid = $booking->payments()->where('type','advance')->where('status','received')->sum('amount');
                         $totalPaid = $booking->payments()->whereIn('status',['received'])->sum('amount');
-                        $remaining = max(0, $booking->total_price - $totalPaid);
+                        $remaining = max(0, $booking->price() - $totalPaid);
                     @endphp
                     <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
                         <span style="color:var(--text-muted);">Total</span>
-                        <strong>PKR {{ number_format($booking->total_price) }}</strong>
+                        <strong>PKR {{ number_format($booking->price()) }}</strong>
                     </div>
+                    @if($booking->negotiated_price !== null && $booking->negotiated_price != $booking->total_price)
+                        <div class="d-flex justify-content-between mb-2" style="font-size:12px;">
+                            <span style="color:var(--text-muted);">Original price</span>
+                            <span style="color:var(--text-muted);text-decoration:line-through;">PKR {{ number_format($booking->total_price) }}</span>
+                        </div>
+                    @endif
+                    @if($booking->price_negotiation_note)
+                        <div class="mb-2" style="font-size:12px;color:var(--text-muted);">
+                            <i class="ti ti-note"></i> {{ $booking->price_negotiation_note }}
+                        </div>
+                    @endif
                     <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
                         <span style="color:var(--text-muted);">Paid</span>
                         <strong style="color:var(--green);">PKR {{ number_format($totalPaid) }}</strong>

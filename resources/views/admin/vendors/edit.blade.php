@@ -22,14 +22,10 @@
                         </div>
                         <div class="col-md-6">
                             <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Vendor Type</label>
-                            <select class="form-control-admin w-100" name="vendor_type" required style="margin-top:4px;">
-                                <option value="hall" {{ old('vendor_type', $vendorProfile->vendor_type) == 'hall' ? 'selected' : '' }}>Hall</option>
-                                <option value="catering" {{ old('vendor_type', $vendorProfile->vendor_type) == 'catering' ? 'selected' : '' }}>Catering</option>
-                                <option value="photography" {{ old('vendor_type', $vendorProfile->vendor_type) == 'photography' ? 'selected' : '' }}>Photography</option>
-                                <option value="decoration" {{ old('vendor_type', $vendorProfile->vendor_type) == 'decoration' ? 'selected' : '' }}>Decoration</option>
-                                <option value="dj" {{ old('vendor_type', $vendorProfile->vendor_type) == 'dj' ? 'selected' : '' }}>DJ</option>
-                                <option value="car rental" {{ old('vendor_type', $vendorProfile->vendor_type) == 'car rental' ? 'selected' : '' }}>Car Rental</option>
-                                <option value="other" {{ old('vendor_type', $vendorProfile->vendor_type) == 'other' ? 'selected' : '' }}>Other</option>
+                            <select class="form-control-admin w-100" name="vendor_type" id="adminVendorType" required style="margin-top:4px;">
+                                @foreach(config('vendor-specs.types') as $tKey => $tDef)
+                                    <option value="{{ $tKey }}" {{ old('vendor_type', $vendorProfile->vendor_type) == $tKey ? 'selected' : '' }}>{{ $tDef['label'] }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -67,6 +63,23 @@
                             <textarea class="form-control-admin w-100" name="cancellation_policy" rows="3" style="margin-top:4px;">{{ old('cancellation_policy', $vendorProfile->cancellation_policy) }}</textarea>
                         </div>
                     </div>
+
+                    {{-- Business Details (contact/legal + type-specific specs) --}}
+                    <hr style="border-color:var(--border);margin:20px 0;">
+                    <h6 style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="ti ti-settings"></i> Business Details</h6>
+                    <p class="text-muted" style="font-size:12px;margin-bottom:14px;">These are the type-specific fields the vendor filled during registration.</p>
+                    <style>:root { --light-honey: #FAEEDA; }</style>
+
+                    @include('vendor.partials.contact-legal', ['values' => $vendorProfile->specFormValues()])
+
+                    @php $specValues = $vendorProfile->specFormValues(); $selectedType = $vendorProfile->vendor_type; @endphp
+                    @foreach(config('vendor-specs.types') as $tKey => $tDef)
+                        @include('vendor.partials.type-specs', [
+                            'typeKey' => $tKey,
+                            'values' => $specValues,
+                            'selected' => $selectedType,
+                        ])
+                    @endforeach
 
                     <div class="d-flex gap-2 pt-3 mt-3 border-top">
                         <button type="submit" class="btn btn-gold"><i class="ti ti-device-floppy"></i> Update Vendor</button>
@@ -191,6 +204,20 @@
 
 @push('scripts')
 <script>
+// Toggle type-spec groups when vendor type changes
+(function() {
+    const typeSelect = document.getElementById('adminVendorType');
+    if (!typeSelect) return;
+    const updateSpecGroups = () => {
+        const val = typeSelect.value;
+        document.querySelectorAll('.spec-group').forEach(g => {
+            g.style.display = g.dataset.specGroup === val ? '' : 'none';
+        });
+    };
+    typeSelect.addEventListener('change', updateSpecGroups);
+    updateSpecGroups();
+})();
+
 const BASE = '{{ url("/admin/vendors/halls") }}';
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 

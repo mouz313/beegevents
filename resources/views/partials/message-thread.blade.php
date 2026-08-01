@@ -1,4 +1,5 @@
 @php
+    $endpoint = $endpoint ?? url()->current();
     $participantNames = collect([$booking->customer?->name])
         ->merge($booking->bookingItems->map(fn ($bi) => $bi->vendorProfile?->user?->name))
         ->filter()
@@ -182,7 +183,7 @@
     var bookingId = {{ $booking->id }};
     var currentUserId = {{ auth()->id() }};
     var fbEnabled = false;
-    var endpoint = window.location.origin + window.location.pathname;
+    var endpoint = @json($endpoint);
 
     try {
         var firebaseConfig = {

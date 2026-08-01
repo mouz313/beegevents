@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Vendor;
 use App\Helpers\ImageHelper;
 use App\Http\Controllers\Controller;
 use App\Models\VendorProfile;
+use App\Services\VendorSpecService;
 use Illuminate\Http\Request;
 
 class OnboardingController extends Controller
@@ -46,12 +47,14 @@ class OnboardingController extends Controller
             'business_name' => 'required|string|max:255',
             'vendor_type' => 'required|in:hall,farmhouse,decor,catering,photography,dj,car,other',
             'city' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'cancellation_policy' => 'nullable|string',
-        ]);
+        ] + VendorSpecService::rulesFor($request->vendor_type));
 
         $profile->update($request->only('business_name', 'vendor_type', 'city', 'phone', 'address', 'cancellation_policy'));
+
+        VendorSpecService::save($profile, $request);
 
         return redirect()->route('vendor.onboarding');
     }

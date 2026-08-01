@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             ServiceCategorySeeder::class,
             DemoDataSeeder::class,
             BlogPostSeeder::class,
+            SettingsSeeder::class,
         ]);
     }
 }

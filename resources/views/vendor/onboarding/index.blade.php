@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Vendor Onboarding')
 
@@ -108,22 +108,16 @@
                                     <label class="form-label" style="font-size:12px;font-weight:600;">Business Name</label>
                                     <input type="text" name="business_name" class="form-control" value="{{ old('business_name', $profile->business_name ?? '') }}" required>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">Vendor Type</label>
-                                    <select name="vendor_type" class="form-select" required>
-                                        <option value="hall" {{ old('vendor_type', $profile->vendor_type ?? '') == 'hall' ? 'selected' : '' }}>Hall</option>
-                                        <option value="farmhouse" {{ old('vendor_type', $profile->vendor_type ?? '') == 'farmhouse' ? 'selected' : '' }}>Farmhouse</option>
-                                        <option value="decor" {{ old('vendor_type', $profile->vendor_type ?? '') == 'decor' ? 'selected' : '' }}>Decor</option>
-                                        <option value="catering" {{ old('vendor_type', $profile->vendor_type ?? '') == 'catering' ? 'selected' : '' }}>Catering</option>
-                                        <option value="photography" {{ old('vendor_type', $profile->vendor_type ?? '') == 'photography' ? 'selected' : '' }}>Photography</option>
-                                        <option value="dj" {{ old('vendor_type', $profile->vendor_type ?? '') == 'dj' ? 'selected' : '' }}>DJ / Sound</option>
-                                        <option value="car" {{ old('vendor_type', $profile->vendor_type ?? '') == 'car' ? 'selected' : '' }}>Car Rental</option>
-                                        <option value="other" {{ old('vendor_type', $profile->vendor_type ?? '') == 'other' ? 'selected' : '' }}>Other</option>
-                                    </select>
+                                <div class="col-12">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">Vendor Type <span style="color:var(--red);">*</span></label>
+                                    @include('vendor.partials.vendor-type-toggle', [
+                                        'selectedType' => old('vendor_type', $profile->vendor_type ?? 'hall'),
+                                        'markChecked' => true,
+                                    ])
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">Phone</label>
-                                    <input type="text" name="phone" class="form-control" value="{{ old('phone', $profile->phone ?? '') }}" placeholder="03XX-XXXXXXX">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">Phone <span style="color:var(--red);">*</span></label>
+                                    <input type="text" name="phone" class="form-control" value="{{ old('phone', $profile->phone ?? '') }}" placeholder="03XX-XXXXXXX" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" style="font-size:12px;font-weight:600;">City</label>
@@ -138,6 +132,23 @@
                                     <textarea name="cancellation_policy" class="form-control" rows="2">{{ old('cancellation_policy', $profile->cancellation_policy ?? '') }}</textarea>
                                 </div>
                             </div>
+
+                            @php $specValues = $profile->specFormValues(); @endphp
+                            <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gold-dark);margin:20px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--cream);display:flex;align-items:center;gap:8px;">
+                                <i class="ti ti-settings"></i> Specifications
+                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                                Select your vendor type to show its specification form.
+                            </div>
+                            @include('vendor.partials.contact-legal', ['values' => $specValues])
+                            @foreach(config('vendor-specs.types', []) as $typeKey => $typeDef)
+                                @include('vendor.partials.type-specs', [
+                                    'typeKey' => $typeKey,
+                                    'values' => $specValues,
+                                    'selected' => $profile->vendor_type ?? old('vendor_type') ?? 'hall',
+                                ])
+                            @endforeach
+
                             <button type="submit" class="btn-gold mt-3">Next Step <i class="ti ti-arrow-right"></i></button>
                         </form>
                     </div>
@@ -223,3 +234,25 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function currentVendorType() {
+    const checked = document.querySelector('input[name="vendor_type"]:checked');
+    return checked ? checked.value : '';
+}
+
+function updateSpecGroups() {
+    const type = currentVendorType();
+    if (!type) return;
+    document.querySelectorAll('.spec-group').forEach(function (group) {
+        group.style.display = group.dataset.specGroup === type ? '' : 'none';
+    });
+}
+
+document.querySelectorAll('input[name="vendor_type"]').forEach(function (el) {
+    el.addEventListener('change', updateSpecGroups);
+});
+updateSpecGroups();
+</script>
+@endpush

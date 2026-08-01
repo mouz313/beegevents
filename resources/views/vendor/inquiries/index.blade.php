@@ -1,12 +1,15 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Inquiries')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Inquiries</h2>
-        <a href="{{ route('vendor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+<div class="container vendor-page">
+    <div class="vendor-page-head">
+        <div>
+            <h2 class="vendor-page-title">Inquiries</h2>
+            <div class="vendor-page-sub">Questions and requests sent from customers.</div>
+        </div>
+        <a href="{{ route('vendor.dashboard') }}" class="btn-outline-gold" style="padding:8px 18px;font-size:12px;">
             <i class="ti ti-arrow-left"></i> Dashboard
         </a>
     </div>
@@ -17,20 +20,20 @@
         </div>
     @endif
 
-    <div class="card" style="border:1px solid var(--border);border-radius:12px;">
-        <div class="card-body" style="padding:0;">
+    <div class="profile-card">
+        <div class="card-body-custom" style="padding:0;">
             @if($inquiries->count() > 0)
                 <div class="table-responsive">
-                    <table class="table" style="margin:0;">
+                    <table class="table vendor-table">
                         <thead>
                             <tr>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Listing</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Customer</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Contact</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Date</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Status</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Message</th>
-                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Action</th>
+                                <th>Listing</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Message</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,7 +68,7 @@
                                                     @csrf
                                                     @method('PUT')
                                                     <input type="hidden" name="status" value="replied">
-                                                    <button type="submit" class="btn btn-sm btn-success" style="font-size:11px;padding:2px 10px;">Replied</button>
+                                                    <button type="submit" class="btn btn-sm btn-gold" style="font-size:11px;padding:2px 10px;">Replied</button>
                                                 </form>
                                             @endif
                                             @if($inq->status != 'closed')
@@ -73,7 +76,7 @@
                                                     @csrf
                                                     @method('PUT')
                                                     <input type="hidden" name="status" value="closed">
-                                                    <button type="submit" class="btn btn-sm btn-secondary" style="font-size:11px;padding:2px 10px;">Close</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-gold" style="font-size:11px;padding:2px 10px;">Close</button>
                                                 </form>
                                             @endif
                                         </div>

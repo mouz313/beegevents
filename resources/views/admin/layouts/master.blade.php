@@ -15,8 +15,12 @@
 
     <aside class="sidebar" id="adminSidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">B</div>
-            <div class="brand-text">Bee<span>G</span></div>
+            @if(setting('site_logo'))
+                <img src="{{ asset('storage/'.setting('site_logo')) }}" alt="{{ setting('site_name', 'BeeG Events') }}" class="sidebar-brand-logo">
+            @else
+                <div class="brand-icon">B</div>
+                <div class="brand-text">Bee<span>G</span></div>
+            @endif
         </div>
 
         <div class="sidebar-menu">
@@ -77,25 +81,35 @@
             </a>
 
             <div class="menu-label">Site</div>
+            <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                <i class="ti ti-settings"></i> Settings
+            </a>
             <a href="{{ route('browse.index') }}" class="nav-link" target="_blank">
                 <i class="ti ti-external-link"></i> View Site
             </a>
         </div>
 
         <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="avatar">{{ substr(auth()->user()->name, 0, 1) }}</div>
+            <a href="{{ route('admin.profile.edit') }}" class="user-info" style="text-decoration:none;color:inherit;" title="Edit profile">
+                <div class="avatar" style="overflow:hidden;">
+                    @if(auth()->user()->avatar_path)
+                        <img src="{{ asset('storage/'.auth()->user()->avatar_path) }}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+                    @else
+                        {{ substr(auth()->user()->name, 0, 1) }}
+                    @endif
+                </div>
                 <div>
                     <div class="user-name">{{ auth()->user()->name }}</div>
                     <div class="user-role">Administrator</div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}" class="ms-auto">
-                    @csrf
-                    <button type="submit" class="btn btn-ghost btn-sm" title="Logout">
-                        <i class="ti ti-logout"></i>
-                    </button>
-                </form>
-            </div>
+                <i class="ti ti-settings" style="margin-left:auto;color:var(--text-muted);" title="Profile settings"></i>
+            </a>
+            <form method="POST" action="{{ route('logout') }}" class="mt-2 w-100">
+                @csrf
+                <button type="submit" class="btn btn-ghost btn-sm w-100" style="border:1px solid var(--border);">
+                    <i class="ti ti-logout"></i> Logout
+                </button>
+            </form>
         </div>
     </aside>
 

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Mail\BookingStatusMail;
 use App\Models\AvailabilitySlot;
+use App\Models\Booking;
 use App\Models\BookingItem;
+use App\Services\BookingPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -25,6 +27,33 @@ class BookingResponseController extends Controller
             ->paginate(20);
 
         return view('vendor.bookings.index', compact('items'));
+    }
+
+    public function download(Booking $booking)
+    {
+        $this->authorizeVendorBooking($booking);
+
+        return app(BookingPdfService::class)->download($booking);
+    }
+
+    public function invoice(Booking $booking)
+    {
+        $this->authorizeVendorBooking($booking);
+
+        return app(BookingPdfService::class)->downloadInvoice($booking);
+    }
+
+    protected function authorizeVendorBooking(Booking $booking): void
+    {
+        $profile = auth()->user()->vendorProfile;
+
+        $ownsItem = BookingItem::where('booking_id', $booking->id)
+            ->where('vendor_profile_id', $profile?->id)
+            ->exists();
+
+        if (! $ownsItem) {
+            abort(403);
+        }
     }
 
     public function respond(Request $request, BookingItem $bookingItem)

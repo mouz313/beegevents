@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\ExtraServiceController as AdminExtraServiceContro
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PayoutController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\VendorVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -45,6 +47,7 @@ use App\Http\Controllers\Vendor\OnboardingController;
 use App\Http\Controllers\Vendor\PackageController as VendorPackageController;
 use App\Http\Controllers\Vendor\ProfileController as VendorProfile;
 use App\Http\Controllers\Vendor\ServiceListingController;
+use App\Http\Controllers\Vendor\VendorMenuController;
 use App\Http\Controllers\WebhookController;
 use App\Models\Booking;
 use App\Models\Hall;
@@ -140,7 +143,11 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::post('/packages/{package}/book', [CustomerBookingController::class, 'bookPackage'])->name('packages.book');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [CustomerBookingController::class, 'show'])->name('bookings.show');
+    Route::get('/bookings/{booking}/download', [CustomerBookingController::class, 'download'])->name('bookings.download');
+    Route::get('/bookings/{booking}/invoice', [CustomerBookingController::class, 'invoice'])->name('bookings.invoice');
     Route::post('/bookings/{booking}/cancel', [CustomerBookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::post('/bookings/{booking}/price-offer/accept', [CustomerBookingController::class, 'acceptPriceOffer'])->name('bookings.price-offer.accept');
+    Route::post('/bookings/{booking}/price-offer/decline', [CustomerBookingController::class, 'declinePriceOffer'])->name('bookings.price-offer.decline');
 
     Route::get('/bookings/{booking}/pay', [CustomerPaymentController::class, 'showPayment'])->name('bookings.payment');
     Route::post('/bookings/{booking}/pay/intent', [CustomerPaymentController::class, 'createIntent'])->name('payments.intent');
@@ -197,6 +204,8 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::delete('/packages/{package}', [VendorPackageController::class, 'destroy'])->name('packages.destroy');
 
     Route::get('/bookings', [BookingResponseController::class, 'index'])->name('bookings.index');
+    Route::get('/bookings/{booking}/download', [BookingResponseController::class, 'download'])->name('bookings.download');
+    Route::get('/bookings/{booking}/invoice', [BookingResponseController::class, 'invoice'])->name('bookings.invoice');
     Route::post('/bookings/{bookingItem}/respond', [BookingResponseController::class, 'respond'])->name('bookings.respond');
 
     Route::get('/bookings/{booking}/messages', [VendorMessageController::class, 'index'])->name('messages.index');
@@ -215,6 +224,15 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::post('/onboarding/step1', [OnboardingController::class, 'step1'])->name('onboarding.step1');
     Route::post('/onboarding/step2', [OnboardingController::class, 'step2'])->name('onboarding.step2');
     Route::post('/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
+
+    Route::get('/menu', [VendorMenuController::class, 'index'])->name('menu.index');
+    Route::post('/menu/categories', [VendorMenuController::class, 'storeCategory'])->name('menu.categories.store');
+    Route::put('/menu/categories/{menuCategory}', [VendorMenuController::class, 'updateCategory'])->name('menu.categories.update');
+    Route::delete('/menu/categories/{menuCategory}', [VendorMenuController::class, 'destroyCategory'])->name('menu.categories.destroy');
+    Route::post('/menu/categories/items/partial', [VendorMenuController::class, 'partial'])->name('menu.items.partial');
+    Route::post('/menu/items', [VendorMenuController::class, 'storeItem'])->name('menu.items.store');
+    Route::put('/menu/items/{menuItem}', [VendorMenuController::class, 'updateItem'])->name('menu.items.update');
+    Route::delete('/menu/items/{menuItem}', [VendorMenuController::class, 'destroyItem'])->name('menu.items.destroy');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -237,12 +255,20 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/bookings', [BookingVerificationController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [BookingVerificationController::class, 'show'])->name('bookings.show');
+    Route::get('/bookings/{booking}/download', [BookingVerificationController::class, 'download'])->name('bookings.download');
+    Route::get('/bookings/{booking}/invoice', [BookingVerificationController::class, 'invoice'])->name('bookings.invoice');
     Route::post('/bookings/{booking}/verify', [BookingVerificationController::class, 'verify'])->name('bookings.verify');
     Route::post('/bookings/{booking}/confirm', [BookingVerificationController::class, 'confirm'])->name('bookings.confirm');
     Route::post('/bookings/{booking}/complete', [BookingVerificationController::class, 'complete'])->name('bookings.complete');
     Route::post('/bookings/{booking}/cancel', [BookingVerificationController::class, 'cancel'])->name('bookings.cancel');
     Route::post('/bookings/{booking}/payment', [BookingVerificationController::class, 'recordPayment'])->name('bookings.payment');
     Route::post('/bookings/payments/{payment}/verify', [BookingVerificationController::class, 'verifyPayment'])->name('bookings.payments.verify');
+    Route::post('/bookings/{booking}/status', [BookingVerificationController::class, 'updateStatus'])->name('bookings.status');
+    Route::post('/bookings/{booking}/price', [BookingVerificationController::class, 'updatePrice'])->name('bookings.price');
+    Route::post('/bookings/{booking}/price-offer', [BookingVerificationController::class, 'sendPriceOffer'])->name('bookings.price-offer');
+    Route::post('/bookings/{booking}/package', [BookingVerificationController::class, 'changePackage'])->name('bookings.package');
+    Route::post('/bookings/{booking}/items', [BookingVerificationController::class, 'addItem'])->name('bookings.items.store');
+    Route::delete('/bookings/{booking}/items/{bookingItem}', [BookingVerificationController::class, 'removeItem'])->name('bookings.items.destroy');
     Route::get('/bookings/{booking}/messages', [AdminMessageController::class, 'index'])->name('messages.index');
     Route::post('/bookings/{booking}/messages', [AdminMessageController::class, 'store'])->name('messages.store');
     Route::get('/bookings/{booking}/messages/latest', [AdminMessageController::class, 'latest'])->name('messages.latest');
@@ -286,4 +312,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'store'])->name('settings.store');
+    Route::post('/settings/bulk', [SettingsController::class, 'bulkUpdate'])->name('settings.bulk');
+    Route::put('/settings/{setting}', [SettingsController::class, 'update'])->name('settings.update');
+    Route::delete('/settings/{setting}', [SettingsController::class, 'destroy'])->name('settings.destroy');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });

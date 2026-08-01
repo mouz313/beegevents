@@ -9,6 +9,8 @@ use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\Package;
 use App\Services\CancellationService;
+use App\Services\NotificationService;
+use App\Services\BookingPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -268,10 +270,97 @@ class BookingController extends Controller
         }
     }
 
+    public function acceptPriceOffer(Request $request, Booking $booking)
+    {
+        if ($booking->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $booking->hasPendingOffer()) {
+            return $this->offerResponse($request, 'No pending price offer.', 422);
+        }
+
+        $commissionRate = config('commission.types.'.$booking->booking_type, config('commission.default_rate', 10));
+
+        $booking->update([
+            'negotiated_price' => $booking->price_offer,
+            'price_offer' => null,
+            'price_offer_status' => 'accepted',
+            'price_offer_note' => null,
+            'price_offer_sent_at' => now(),
+            'commission_amount' => round($booking->price_offer * ($commissionRate / 100), 2),
+        ]);
+
+        app(NotificationService::class)->notifyParticipants(
+            $booking,
+            auth()->id(),
+            'Price offer accepted',
+            'Customer accepted the new price of PKR '.number_format($booking->price()).' for booking #'.$booking->id.'.'
+        );
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'price' => $booking->price()]);
+        }
+
+        return redirect()->back()->with('success', 'Price offer accepted! Your new total is PKR '.number_format($booking->price()).'.');
+    }
+
+    public function declinePriceOffer(Request $request, Booking $booking)
+    {
+        if ($booking->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $booking->hasPendingOffer()) {
+            return $this->offerResponse($request, 'No pending price offer.', 422);
+        }
+
+        $booking->update(['price_offer_status' => 'declined']);
+
+        app(NotificationService::class)->notifyParticipants(
+            $booking,
+            auth()->id(),
+            'Price offer declined',
+            'Customer declined the price offer for booking #'.$booking->id.'.'
+        );
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->back()->with('success', 'Price offer declined.');
+    }
+
+    protected function offerResponse(Request $request, string $message, int $status)
+    {
+        if ($request->ajax()) {
+            return response()->json(['success' => false, 'message' => $message], $status);
+        }
+
+        return redirect()->back()->with('error', $message);
+    }
+
+    public function download(Booking $booking)
+    {
+        if ($booking->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return app(BookingPdfService::class)->download($booking);
+    }
+
+    public function invoice(Booking $booking)
+    {
+        if ($booking->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return app(BookingPdfService::class)->downloadInvoice($booking);
+    }
+
     public function show(Booking $booking)
     {
-        $booking->load('bookingItems');
-        $refundInfo = null;
+        $booking->load('bookingItems');        $refundInfo = null;
         if (in_array($booking->status, ['requested', 'discussing', 'verified', 'confirmed'])) {
             $refundInfo = $this->cancellationService->calculateRefund($booking);
         }

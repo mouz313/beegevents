@@ -1,12 +1,17 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'My Packages')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Packages</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#packageModal">Create Package</button>
+<div class="container vendor-page">
+    <div class="vendor-page-head">
+        <div>
+            <h2 class="vendor-page-title">My Packages</h2>
+            <div class="vendor-page-sub">Bundle your halls, units and services into packages.</div>
+        </div>
+        <button class="btn-gold" data-bs-toggle="modal" data-bs-target="#packageModal">
+            <i class="ti ti-plus"></i> Create Package
+        </button>
     </div>
 
     @if(session('success'))
@@ -16,12 +21,12 @@
     <div class="row">
         @forelse($packages as $package)
             <div class="col-md-6 mb-3" id="package-{{ $package->id }}">
-                <div class="card">
-                    <div class="card-body">
+                <div class="profile-card">
+                    <div class="card-body-custom" style="padding:20px;">
                         <div class="d-flex justify-content-between">
-                            <h5 class="card-title">{{ $package->title }}</h5>
+                            <h5 style="margin:0;color:var(--charcoal);font-weight:700;font-size:16px;">{{ $package->title }}</h5>
                             <div>
-                                <button class="btn btn-sm btn-outline-primary edit-package"
+                                <button class="btn btn-sm btn-outline-gold edit-package"
                                     data-id="{{ $package->id }}"
                                     data-title="{{ $package->title }}"
                                     data-description="{{ $package->description ?? '' }}"
@@ -32,9 +37,9 @@
                             </div>
                         </div>
                         <p class="card-text text-muted">{{ $package->description }}</p>
-                        <div class="mb-2">
-                            <span class="badge bg-warning text-dark">PKR {{ number_format($package->total_price) }}</span>
-                            <span class="badge bg-info">{{ ucfirst($package->event_type) }}</span>
+                        <div class="mb-2 d-flex gap-1 flex-wrap">
+                            <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:var(--gold);color:var(--charcoal);">PKR {{ number_format($package->total_price) }}</span>
+                            <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--cream);border:1px solid var(--border);color:var(--text-muted);">{{ ucfirst($package->event_type) }}</span>
                         </div>
                         <ul class="mb-0" style="font-size:13px;">
                             @foreach($package->packageItems as $item)
@@ -58,7 +63,7 @@
 </div>
 
 <!-- Package Modal -->
-<div class="modal fade" id="packageModal" tabindex="-1">
+<div class="modal fade vendor-modal" id="packageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="packageForm">
@@ -72,14 +77,14 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="mb-3">
-                                <label class="form-label">Package Title</label>
-                                <input type="text" class="form-control" id="title" name="title" required>
+                                <label class="form-label-custom">Package Title <span style="color:var(--red);">*</span></label>
+                                <input type="text" class="form-control input-custom" id="title" name="title" required>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Event Type</label>
-                                <select class="form-select" id="event_type" name="event_type" required>
+                                <label class="form-label-custom">Event Type <span style="color:var(--red);">*</span></label>
+                                <select class="form-select input-custom" id="event_type" name="event_type" required>
                                     <option value="wedding">Wedding</option>
                                     <option value="engagement">Engagement</option>
                                     <option value="corporate">Corporate</option>
@@ -91,16 +96,16 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="What's included in this package?"></textarea>
+                        <label class="form-label-custom">Description</label>
+                        <textarea class="form-control input-custom" id="description" name="description" rows="2" placeholder="What's included in this package?"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Total Price (PKR)</label>
-                        <input type="number" class="form-control" id="total_price" name="total_price" min="0" step="0.01" required>
+                        <label class="form-label-custom">Total Price (PKR) <span style="color:var(--red);">*</span></label>
+                        <input type="number" class="form-control input-custom" id="total_price" name="total_price" min="0" step="0.01" required>
                         <small style="color:var(--text-muted);font-size:11px;">Tip: sum of selected items below.</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Include Items (your halls/units &amp; services)</label>
+                        <label class="form-label-custom">Include Items (your halls/units &amp; services)</label>
                         <div id="itemsContainer" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:12px;">
                             @forelse($hallUnits as $unit)
                                 <div class="form-check">
@@ -133,8 +138,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="packageSubmitBtn">Create</button>
+                    <button type="button" class="btn-outline-gold" data-bs-dismiss="modal" style="padding:8px 18px;font-size:13px;">Cancel</button>
+                    <button type="submit" class="btn-gold" id="packageSubmitBtn" style="padding:8px 18px;font-size:13px;">Create</button>
                 </div>
             </form>
         </div>

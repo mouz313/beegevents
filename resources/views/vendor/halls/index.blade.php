@@ -1,12 +1,17 @@
-@extends('layouts.app')
+@extends('vendor.layouts.master')
 
 @section('title', 'Manage Halls')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Halls</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#hallModal">Add New Hall</button>
+<div class="container vendor-page">
+    <div class="vendor-page-head">
+        <div>
+            <h2 class="vendor-page-title">My Halls</h2>
+            <div class="vendor-page-sub">Manage your halls, their floors and units.</div>
+        </div>
+        <button class="btn-gold" data-bs-toggle="modal" data-bs-target="#hallModal">
+            <i class="ti ti-plus"></i> Add New Hall
+        </button>
     </div>
 
     @if(session('success'))
@@ -16,12 +21,12 @@
     <div class="row" id="hallsContainer">
         @forelse($halls as $hall)
             <div class="col-md-6 mb-3" id="hall-{{ $hall->id }}">
-                <div class="card">
-                    <div class="card-body">
+                <div class="profile-card">
+                    <div class="card-body-custom" style="padding:20px;">
                         <div class="d-flex justify-content-between">
-                            <h5 class="card-title">{{ $hall->name }}</h5>
+                            <h5 style="margin:0;color:var(--charcoal);font-weight:700;font-size:16px;">{{ $hall->name }}</h5>
                             <div>
-                                <button class="btn btn-sm btn-outline-primary edit-hall"
+                                <button class="btn btn-sm btn-outline-gold edit-hall"
                                     data-id="{{ $hall->id }}"
                                     data-name="{{ $hall->name }}"
                                     data-address="{{ $hall->address }}"
@@ -62,7 +67,7 @@
                                             @foreach($floor->hallUnits as $u => $unit)
                                                 {{ $unit->unit_name }}@if(!$loop->last), @endif
                                             @endforeach
-                                            @if($floor->hallUnits->count() === 0)no units@endif
+                                            @if($floor->hallUnits->count() === 0)<span class="text-muted">no units</span>@endif
                                         )
                                         </span>
                                     </div>
@@ -74,8 +79,8 @@
                         </div>
 
                         <div class="mt-2">
-                            <a href="{{ route('vendor.halls.floors.index', $hall) }}" class="btn btn-sm btn-outline-info">Manage Floors ({{ $hall->floors->count() }})</a>
-                            <a href="{{ route('vendor.halls.units.index', $hall) }}" class="btn btn-sm btn-outline-success">Manage Units ({{ $hall->hallUnits->count() }})</a>
+                            <a href="{{ route('vendor.halls.floors.index', $hall) }}" class="btn btn-sm btn-outline-gold">Manage Floors ({{ $hall->floors->count() }})</a>
+                            <a href="{{ route('vendor.halls.units.index', $hall) }}" class="btn btn-sm btn-outline-gold">Manage Units ({{ $hall->hallUnits->count() }})</a>
                         </div>
                     </div>
                 </div>
@@ -121,7 +126,7 @@
 </div>
 
 <!-- Hall Modal -->
-<div class="modal fade" id="hallModal" tabindex="-1">
+<div class="modal fade vendor-modal" id="hallModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="hallForm" enctype="multipart/form-data">
@@ -135,13 +140,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Hall Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
+                                <label class="form-label-custom">Hall Name <span style="color:var(--red);">*</span></label>
+                                <input type="text" class="form-control input-custom" id="name" name="name" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Has Multiple Floors</label>
+                                <label class="form-label-custom">Has Multiple Floors</label>
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="has_floors" name="has_floors" value="1" checked>
                                     <label class="form-check-label" for="has_floors">Yes</label>
@@ -150,22 +155,22 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" required></textarea>
+                        <label class="form-label-custom">Address <span style="color:var(--red);">*</span></label>
+                        <textarea class="form-control input-custom" id="address" name="address" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe your hall, its features, ambiance, etc."></textarea>
+                        <label class="form-label-custom">Description</label>
+                        <textarea class="form-control input-custom" id="description" name="description" rows="3" placeholder="Describe your hall, its features, ambiance, etc."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Images</label>
-                        <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/jpeg,image/png,image/jpg,image/webp">
+                        <label class="form-label-custom">Images</label>
+                        <input type="file" class="form-control input-custom" id="images" name="images[]" multiple accept="image/jpeg,image/png,image/jpg,image/webp">
                         <small style="color:var(--text-muted);font-size:11px;">JPEG, PNG, WebP. Max 10MB each.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="hallSubmitBtn">Save</button>
+                    <button type="button" class="btn-outline-gold" data-bs-dismiss="modal" style="padding:8px 18px;font-size:13px;">Cancel</button>
+                    <button type="submit" class="btn-gold" id="hallSubmitBtn" style="padding:8px 18px;font-size:13px;">Save</button>
                 </div>
             </form>
         </div>

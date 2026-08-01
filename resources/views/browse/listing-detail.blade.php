@@ -161,6 +161,46 @@
                     </a>
                 </div>
             </div>
+
+            @php $specRows = $listing->vendorProfile ? $listing->vendorProfile->specDisplayList() : []; @endphp
+            @if(count($specRows) > 0)
+                <div class="vendor-card mt-3">
+                    <h6 style="font-weight:700;font-size:13px;margin-bottom:12px;"><i class="ti ti-settings" style="color:var(--gold);"></i> Specifications</h6>
+                    <div class="vendor-stats">
+                        @foreach($specRows as $row)
+                            <div class="vendor-stat-row">
+                                <span class="vendor-stat-label">{{ $row['label'] }}</span>
+                                <span class="vendor-stat-value">{{ $row['value'] }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @php $menuCats = $listing->vendorProfile ? $listing->vendorProfile->menuCategories()->with('menuItems')->get() : collect(); @endphp
+            @if($menuCats->count() > 0)
+                <div class="vendor-card mt-3">
+                    <h6 style="font-weight:700;font-size:13px;margin-bottom:12px;"><i class="ti ti-cookie" style="color:var(--gold);"></i> Food Menu</h6>
+                    @foreach($menuCats as $cat)
+                        @php $catItems = $cat->menuItems->where('is_available', true); @endphp
+                        @if($catItems->count() > 0)
+                            <div style="margin-bottom:14px;">
+                                <div style="font-size:13px;font-weight:700;color:var(--charcoal);">{{ $cat->name }}</div>
+                                <div style="border-top:1px dashed var(--border);margin:6px 0;padding-top:6px;">
+                                    @foreach($catItems as $item)
+                                        <div class="d-flex justify-content-between align-items-center py-1" style="font-size:12px;gap:8px;">
+                                            <span style="color:var(--text-primary);">{{ $item->name }}</span>
+                                            @if($item->price)
+                                                <span style="font-weight:600;color:var(--gold-dark);white-space:nowrap;">PKR {{ number_format($item->price) }}</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </div>

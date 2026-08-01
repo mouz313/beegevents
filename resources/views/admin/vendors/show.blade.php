@@ -111,6 +111,101 @@
             </div>
         </div>
 
+        {{-- Business Details (contact + specs) --}}
+        @php $specRows = $vendorProfile->specDisplayList(); @endphp
+        @if($vendorProfile->contact_person_name || $vendorProfile->contact_person_phone || $vendorProfile->legal_doc_path || count($specRows) > 0)
+            <div class="admin-card">
+                <div class="card-header">
+                    <h5><i class="ti ti-settings"></i> Business Details ({{ $vendorProfile->type_label }})</h5>
+                </div>
+                <div class="card-body">
+                    @if($vendorProfile->contact_person_name || $vendorProfile->contact_person_phone || $vendorProfile->legal_doc_path)
+                        <div class="row g-3 mb-3">
+                            @if($vendorProfile->contact_person_name)
+                                <div class="col-md-6">
+                                    <div style="background:var(--cream);border-radius:8px;padding:12px 16px;">
+                                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contact Person</div>
+                                        <div style="font-size:14px;font-weight:600;margin-top:4px;">{{ $vendorProfile->contact_person_name }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($vendorProfile->contact_person_phone)
+                                <div class="col-md-6">
+                                    <div style="background:var(--cream);border-radius:8px;padding:12px 16px;">
+                                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contact Person Number</div>
+                                        <div style="font-size:14px;font-weight:600;margin-top:4px;">{{ $vendorProfile->contact_person_phone }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($vendorProfile->legal_doc_path)
+                                <div class="col-md-6">
+                                    <div style="background:var(--cream);border-radius:8px;padding:12px 16px;">
+                                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Legal Document</div>
+                                        <div style="font-size:14px;font-weight:600;margin-top:4px;">
+                                            <a href="{{ asset('storage/' . $vendorProfile->legal_doc_path) }}" target="_blank" style="color:var(--gold-dark);">
+                                                <i class="ti ti-file-download"></i> View Document
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if(count($specRows) > 0)
+                        <div class="row g-3">
+                            @foreach($specRows as $row)
+                                <div class="col-md-6">
+                                    <div style="background:var(--cream);border-radius:8px;padding:12px 16px;">
+                                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">{{ $row['label'] }}</div>
+                                        <div style="font-size:14px;font-weight:600;margin-top:4px;">{{ $row['value'] }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        {{-- Food Menu --}}
+        @php $menuCats = $vendorProfile->menuCategories()->with('menuItems')->get(); @endphp
+        @if($menuCats->count() > 0)
+            <div class="admin-card">
+                <div class="card-header">
+                    <h5><i class="ti ti-cookie"></i> Food Menu</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table-admin">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Item</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($menuCats as $cat)
+                                @foreach($cat->menuItems as $item)
+                                    <tr>
+                                        <td>{{ $cat->name }}</td>
+                                        <td><strong>{{ $item->name }}</strong></td>
+                                        <td>{{ $item->price ? 'PKR ' . number_format($item->price) : '—' }}</td>
+                                        <td>
+                                            <span class="status-badge status-{{ $item->is_available ? 'verified' : 'suspended' }}">
+                                                {{ $item->is_available ? 'Available' : 'Unavailable' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         {{-- Halls with Floors/Units + Gallery --}}
         @if($vendorProfile->halls->count() > 0)
             <div class="admin-card">

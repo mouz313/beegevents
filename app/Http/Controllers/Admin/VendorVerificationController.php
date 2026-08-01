@@ -9,6 +9,7 @@ use App\Models\Hall;
 use App\Models\HallImage;
 use App\Models\HallUnit;
 use App\Models\VendorProfile;
+use App\Services\VendorSpecService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -55,7 +56,7 @@ class VendorVerificationController extends Controller
 
     public function update(Request $request, VendorProfile $vendorProfile)
     {
-        $request->validate([
+        $request->validate(array_merge([
             'business_name' => 'required|string|max:255',
             'vendor_type' => 'required|string|max:255',
             'city' => 'required|string|max:255',
@@ -64,7 +65,7 @@ class VendorVerificationController extends Controller
             'status' => 'required|in:pending,verified,suspended',
             'cancellation_policy' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-        ]);
+        ], VendorSpecService::rulesFor($request->vendor_type)));
 
         $data = $request->only('business_name', 'vendor_type', 'city', 'phone', 'address', 'status', 'cancellation_policy');
 
@@ -73,6 +74,8 @@ class VendorVerificationController extends Controller
         }
 
         $vendorProfile->update($data);
+
+        VendorSpecService::save($vendorProfile, $request);
 
         if ($request->ajax()) return response()->json(['success' => true]);
         return redirect()->route('admin.vendors.index')->with('success', 'Vendor updated successfully.');
