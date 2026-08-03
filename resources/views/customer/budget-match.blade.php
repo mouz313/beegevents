@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('customer.layouts.master')
 
 @section('title', 'Budget Match')
 

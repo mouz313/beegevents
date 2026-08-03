@@ -48,6 +48,9 @@
             <a href="{{ route('vendor.packages.index') }}" class="nav-link {{ request()->routeIs('vendor.packages.*') ? 'active' : '' }}">
                 <i class="ti ti-gift"></i> Packages
             </a>
+            <a href="{{ route('vendor.combos.index') }}" class="nav-link {{ request()->routeIs('vendor.combos.*') ? 'active' : '' }}">
+                <i class="ti ti-package"></i> My Combo
+            </a>
             <a href="{{ route('vendor.menu.index') }}" class="nav-link {{ request()->routeIs('vendor.menu.*') ? 'active' : '' }}">
                 <i class="ti ti-cookie"></i> Menu
             </a>

@@ -8,7 +8,6 @@ use App\Models\AvailabilitySlot;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\HallUnit;
-use App\Models\Package;
 use App\Models\Payment;
 use App\Models\ServiceListing;
 use App\Services\BookingPdfService;
@@ -38,11 +37,12 @@ class BookingVerificationController extends Controller
     {
         $booking->load('customer', 'bookingItems.vendorProfile', 'payments');
 
-        $packages = Package::withCount('packageItems')->get();
-        $hallUnits = HallUnit::with('hall')->get();
+        $hallUnits = HallUnit::with('hall', 'extraServices')->get();
         $listings = ServiceListing::with('serviceCategory', 'vendorProfile')->get();
 
-        return view('admin.bookings.show', compact('booking', 'packages', 'hallUnits', 'listings'));
+        $menuSetsByVendor = \App\Models\MenuSet::with('items')->get()->groupBy('vendor_profile_id');
+
+        return view('admin.bookings.show', compact('booking', 'hallUnits', 'listings', 'menuSetsByVendor'));
     }
 
     public function download(Booking $booking)
@@ -62,7 +62,7 @@ class BookingVerificationController extends Controller
     public function verify(Request $request, Booking $booking)
     {
         $booking->update(['status' => 'verified']);
-        $this->notifyCustomer($booking, 'Booking Verified', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been verified. We will confirm shortly.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking Verified', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' has been verified. We will confirm shortly.', route('customer.bookings.show', $booking));
         if ($request->ajax()) {
             return response()->json(['success' => true]);
         }
@@ -73,7 +73,7 @@ class BookingVerificationController extends Controller
     public function confirm(Request $request, Booking $booking)
     {
         $booking->update(['status' => 'confirmed']);
-        $this->notifyCustomer($booking, 'Booking Confirmed', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been confirmed! We look forward to serving you.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking Confirmed', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' has been confirmed! We look forward to serving you.', route('customer.bookings.show', $booking));
         if ($request->ajax()) {
             return response()->json(['success' => true]);
         }
@@ -84,7 +84,7 @@ class BookingVerificationController extends Controller
     public function complete(Request $request, Booking $booking)
     {
         $booking->update(['status' => 'completed']);
-        $this->notifyCustomer($booking, 'Booking Completed', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been marked as completed. Please leave a review!', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking Completed', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' has been marked as completed. Please leave a review!', route('customer.bookings.show', $booking));
         if ($request->ajax()) {
             return response()->json(['success' => true]);
         }
@@ -95,7 +95,7 @@ class BookingVerificationController extends Controller
     public function cancel(Request $request, Booking $booking)
     {
         $refundInfo = $this->cancellationService->cancel($booking);
-        $this->notifyCustomer($booking, 'Booking Cancelled', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking Cancelled', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.', route('customer.bookings.show', $booking));
         if ($request->ajax()) {
             return response()->json(['success' => true, 'refund' => $refundInfo]);
         }
@@ -155,7 +155,7 @@ class BookingVerificationController extends Controller
 
         if ($target === 'cancelled') {
             $refundInfo = $this->cancellationService->cancel($booking);
-            $this->notifyCustomer($booking, 'Booking Cancelled', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.', route('customer.bookings.show', $booking));
+            $this->notifyCustomer($booking, 'Booking Cancelled', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.', route('customer.bookings.show', $booking));
 
             return $request->ajax()
                 ? response()->json(['success' => true, 'refund' => $refundInfo])
@@ -174,7 +174,7 @@ class BookingVerificationController extends Controller
         }
 
         $booking->update(['status' => $target]);
-        $this->notifyCustomer($booking, 'Booking '.ucfirst($target), 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' is now '.$target.'.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking '.ucfirst($target), 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' is now '.$target.'.', route('customer.bookings.show', $booking));
 
         if ($request->ajax()) {
             return response()->json(['success' => true]);
@@ -194,20 +194,16 @@ class BookingVerificationController extends Controller
             ? (float) $validated['negotiated_price']
             : null;
 
-        $commissionRate = config('commission.types.'.$booking->booking_type, config('commission.default_rate', 10));
-        $commissionAmount = $agreed !== null ? round($agreed * ($commissionRate / 100), 2) : $booking->commission_amount;
-
         $booking->update([
             'negotiated_price' => $agreed,
             'price_negotiation_note' => $validated['price_negotiation_note'] ?? null,
-            'commission_amount' => $commissionAmount,
             'price_offer' => null,
             'price_offer_status' => null,
             'price_offer_note' => null,
             'price_offer_sent_at' => null,
         ]);
 
-        $this->notifyCustomer($booking, 'Booking Price Updated', 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' agreed price is now PKR '.number_format($booking->price()).'.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'Booking Price Updated', 'Hi '.$booking->customer->name.',', 'Your booking '.$booking->reference.' agreed price is now PKR '.number_format($booking->price()).'.', route('customer.bookings.show', $booking));
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'price' => $booking->price()]);
@@ -231,13 +227,13 @@ class BookingVerificationController extends Controller
             'negotiated_price' => null,
         ]);
 
-        $this->notifyCustomer($booking, 'New Price Offer #'.$booking->id, 'Hi '.$booking->customer->name.',', 'We have proposed a new price of PKR '.number_format($validated['price_offer']).' for your booking #'.$booking->id.'. Please review it in your dashboard.', route('customer.bookings.show', $booking));
+        $this->notifyCustomer($booking, 'New Price Offer '.$booking->reference, 'Hi '.$booking->customer->name.',', 'We have proposed a new price of PKR '.number_format($validated['price_offer']).' for your booking '.$booking->reference.'. Please review it in your dashboard.', route('customer.bookings.show', $booking));
 
         app(NotificationService::class)->notifyParticipants(
             $booking,
             auth()->id(),
             'New price offer PKR '.number_format($validated['price_offer']),
-            'Booking #'.$booking->id.' — please review the new proposed price.'
+            'Booking '.$booking->reference.' — please review the new proposed price.'
         );
 
         if ($request->ajax()) {
@@ -245,91 +241,6 @@ class BookingVerificationController extends Controller
         }
 
         return redirect()->back()->with('success', 'Price offer sent to customer!');
-    }
-
-    public function changePackage(Request $request, Booking $booking)
-    {
-        if ($booking->status === 'completed' || $booking->status === 'cancelled') {
-            return $this->jsonResponse($request, ['success' => false, 'message' => 'Cannot change the package on a '.$booking->status.' booking.'], 422);
-        }
-
-        $request->validate(['package_id' => 'required|exists:packages,id']);
-        $package = Package::with('packageItems')->findOrFail($request->package_id);
-
-        try {
-            DB::transaction(function () use ($booking, $package) {
-                foreach ($package->packageItems as $packageItem) {
-                    $itemable = $packageItem->itemable;
-                    if (! $itemable || $packageItem->itemable_type !== 'App\Models\HallUnit') {
-                        continue;
-                    }
-
-                    $conflict = $this->hallConflict($itemable->id, $booking->event_date);
-                    if ($conflict) {
-                        throw new \RuntimeException($itemable->unit_name.' is not available on '.$booking->event_date->format('d M Y').'.');
-                    }
-                }
-
-                AvailabilitySlot::where('booking_id', $booking->id)
-                    ->whereIn('status', ['held', 'booked'])
-                    ->delete();
-
-                $booking->bookingItems()->delete();
-
-                $commissionRate = config('commission.types.package', config('commission.default_rate', 10));
-                $commissionAmount = round($package->total_price * ($commissionRate / 100), 2);
-
-                $booking->update([
-                    'booking_type' => 'package',
-                    'total_price' => $package->total_price,
-                    'negotiated_price' => null,
-                    'price_offer' => null,
-                    'price_offer_status' => null,
-                    'price_offer_note' => null,
-                    'price_offer_sent_at' => null,
-                    'commission_amount' => $commissionAmount,
-                    'notes' => 'Package: '.$package->title,
-                ]);
-
-                $heldUntil = now()->addHours(24);
-
-                foreach ($package->packageItems as $packageItem) {
-                    $itemable = $packageItem->itemable;
-                    if (! $itemable) {
-                        continue;
-                    }
-
-                    BookingItem::create([
-                        'booking_id' => $booking->id,
-                        'itemable_type' => $packageItem->itemable_type,
-                        'itemable_id' => $packageItem->itemable_id,
-                        'vendor_profile_id' => $itemable->vendor_profile_id ?? $itemable->hall?->vendor_profile_id,
-                        'price' => $itemable->price ?? $itemable->base_price ?? 0,
-                    ]);
-
-                    if ($packageItem->itemable_type === 'App\Models\HallUnit') {
-                        AvailabilitySlot::create([
-                            'resource_type' => 'App\Models\HallUnit',
-                            'resource_id' => $itemable->id,
-                            'date' => $booking->event_date,
-                            'status' => 'held',
-                            'booking_id' => $booking->id,
-                            'held_until' => $heldUntil,
-                        ]);
-                    }
-                }
-            });
-        } catch (\RuntimeException $e) {
-            return $this->jsonResponse($request, ['success' => false, 'message' => $e->getMessage()], 409);
-        }
-
-        $this->notifyCustomer($booking, 'Package Updated #'.$booking->id, 'Hi '.$booking->customer->name.',', 'Your booking #'.$booking->id.' is now on the '.$package->title.' (PKR '.number_format($package->total_price).').', route('customer.bookings.show', $booking));
-
-        if ($request->ajax()) {
-            return response()->json(['success' => true]);
-        }
-
-        return redirect()->back()->with('success', 'Package changed to '.$package->title.'!');
     }
 
     public function addItem(Request $request, Booking $booking)
@@ -341,6 +252,10 @@ class BookingVerificationController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:hall_unit,service_listing',
             'itemable_id' => 'required|integer',
+            'time_slot' => 'nullable|in:noon,evening',
+            'menu_set_id' => 'nullable|exists:menu_sets,id',
+            'extras' => 'nullable|array',
+            'extras.*.id' => 'required|integer',
         ]);
 
         $itemableType = $validated['type'] === 'hall_unit' ? 'App\Models\HallUnit' : 'App\Models\ServiceListing';
@@ -353,11 +268,40 @@ class BookingVerificationController extends Controller
         }
 
         if ($validated['type'] === 'hall_unit') {
-            $conflict = $this->hallConflict($itemable->id, $booking->event_date);
+            $conflict = $this->hallConflict($itemable->id, $booking->event_date, $validated['time_slot'] ?? null);
             if ($conflict) {
-                return $this->jsonResponse($request, ['success' => false, 'message' => $itemable->unit_name.' is not available on '.$booking->event_date->format('d M Y').'.'], 409);
+                return $this->jsonResponse($request, ['success' => false, 'message' => $itemable->unit_name.' is not available on '.$booking->event_date->format('d M Y').($validated['time_slot'] ? ' ('.ucfirst($validated['time_slot']).')' : '').'.'], 409);
             }
         }
+
+        // Resolve menu set + extras using authoritative server prices (hall units only)
+        $menuSetId = null;
+        $menuSetPrice = 0;
+        if ($validated['type'] === 'hall_unit' && $request->input('menu_set_id')) {
+            $menuSet = \App\Models\MenuSet::find($request->input('menu_set_id'));
+            if ($menuSet && $menuSet->vendor_profile_id === $itemable->hall?->vendor_profile_id) {
+                $menuSetId = $menuSet->id;
+                $menuSetPrice = $menuSet->getTotalPriceAttribute();
+            }
+        }
+        $extras = [];
+        if ($validated['type'] === 'hall_unit') {
+            $extras = \App\Models\ExtraService::where('serviceable_type', 'App\Models\HallUnit')
+                ->where('serviceable_id', $itemable->id)
+                ->whereIn('id', collect($request->input('extras', []))->pluck('id')->filter()->unique())
+                ->get()
+                ->map(fn ($e) => [
+                    'id' => (int) $e->id,
+                    'name' => $e->name,
+                    'price' => (float) $e->price,
+                    'price_unit' => $e->price_unit ?? 'flat',
+                ])
+                ->values()
+                ->all();
+        }
+        $extrasTotal = array_sum(array_column($extras, 'price'));
+
+        $basePrice = $itemable->price ?? $itemable->base_price ?? 0;
 
         $item = BookingItem::firstOrCreate(
             [
@@ -367,7 +311,10 @@ class BookingVerificationController extends Controller
             ],
             [
                 'vendor_profile_id' => $itemable->vendor_profile_id ?? $itemable->hall?->vendor_profile_id,
-                'price' => $itemable->price ?? $itemable->base_price ?? 0,
+                'price' => $basePrice + $menuSetPrice + $extrasTotal,
+                'time_slot' => $validated['time_slot'] ?? null,
+                'extras' => $extras,
+                'menu_set_id' => $menuSetId,
             ]
         );
 
@@ -375,6 +322,7 @@ class BookingVerificationController extends Controller
             $slotExists = AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
                 ->where('resource_id', $itemable->id)
                 ->where('date', $booking->event_date)
+                ->where('slot_type', $validated['time_slot'] ?? 'noon')
                 ->exists();
 
             if (! $slotExists) {
@@ -382,6 +330,7 @@ class BookingVerificationController extends Controller
                     'resource_type' => 'App\Models\HallUnit',
                     'resource_id' => $itemable->id,
                     'date' => $booking->event_date,
+                    'slot_type' => $validated['time_slot'] ?? 'noon',
                     'status' => 'held',
                     'booking_id' => $booking->id,
                     'held_until' => now()->addHours(24),
@@ -427,11 +376,18 @@ class BookingVerificationController extends Controller
         return redirect()->back()->with('success', 'Item removed!');
     }
 
-    protected function hallConflict(int $hallUnitId, $date)
+    protected function hallConflict(int $hallUnitId, $date, ?string $slotType = null)
     {
         return AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
             ->where('resource_id', $hallUnitId)
             ->where('date', $date)
+            ->where(function ($q) use ($slotType) {
+                if ($slotType) {
+                    $q->where(function ($s) use ($slotType) {
+                        $s->where('slot_type', $slotType)->orWhereNull('slot_type');
+                    });
+                }
+            })
             ->lockForUpdate()
             ->where(function ($q) {
                 $q->whereIn('status', ['booked', 'blocked_offline'])

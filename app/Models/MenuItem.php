@@ -25,4 +25,9 @@ class MenuItem extends Model
     {
         return $this->belongsTo(MenuCategory::class);
     }
+
+    public function menuSets(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(MenuSet::class, 'menu_set_items');
+    }
 }

@@ -15,11 +15,26 @@
 
     <div style="background:#FBF6EC;border-radius:10px;padding:16px;margin:16px 0;">
         <table style="width:100%;font-size:13px;color:#2B2620;">
-            <tr><td style="padding:4px 0;color:#6B6660;width:120px;">Booking #</td><td style="padding:4px 0;"><strong>{{ $booking->id }}</strong></td></tr>
+            <tr><td style="padding:4px 0;color:#6B6660;width:120px;">Booking #</td><td style="padding:4px 0;"><strong>{{ $booking->reference }}</strong></td></tr>
             <tr><td style="padding:4px 0;color:#6B6660;">Status</td><td style="padding:4px 0;"><strong>{{ ucfirst($booking->status) }}</strong></td></tr>
             <tr><td style="padding:4px 0;color:#6B6660;">Event Date</td><td style="padding:4px 0;"><strong>{{ \Carbon\Carbon::parse($booking->event_date)->format('M d, Y') }}</strong></td></tr>
+            <tr><td style="padding:4px 0;color:#6B6660;">Event Time</td><td style="padding:4px 0;"><strong>{{ $booking->time_slot ? ucfirst($booking->time_slot) : 'N/A' }}</strong></td></tr>
             <tr><td style="padding:4px 0;color:#6B6660;">Total</td><td style="padding:4px 0;"><strong>PKR {{ number_format($booking->total_price) }}</strong></td></tr>
         </table>
+        @if($booking->bookingItems->count() > 0)
+            <div style="margin-top:12px;font-size:12px;color:#6B6660;">
+                <div style="font-weight:600;margin-bottom:4px;">Items:</div>
+                @foreach($booking->bookingItems as $item)
+                    <div style="padding:2px 0;">
+                        {{ $item->itemable?->unit_name ?? $item->itemable?->title ?? ('#'.$item->itemable_id) }}
+                        @if($item->time_slot) — {{ ucfirst($item->time_slot) }} slot @endif
+                        @if($item->menuSet) · Menu: {{ $item->menuSet->name }} @endif
+                        @if(!empty($item->extras)) · {{ count($item->extras) }} extra(s) @endif
+                        — <strong>PKR {{ number_format($item->price) }}</strong>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <p style="color:#6B6660;font-size:13px;">{{ $body }}</p>

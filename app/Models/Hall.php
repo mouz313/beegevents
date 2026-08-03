@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['vendor_profile_id', 'name', 'address', 'description', 'has_floors'])]
+#[Fillable(['vendor_profile_id', 'name', 'venue_type', 'address', 'description', 'has_floors'])]
 class Hall extends Model
 {
     use HasFactory;

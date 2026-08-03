@@ -72,4 +72,24 @@ class NotificationService
             $this->publish($notification);
         }
     }
+
+    /**
+     * Notify all admin users.
+     */
+    public static function notifyAdmins(string $title, string $body): void
+    {
+        $service = app(self::class);
+        $adminIds = User::where('role', 'admin')->pluck('id');
+
+        foreach ($adminIds as $userId) {
+            $notification = Notification::create([
+                'user_id' => $userId,
+                'type' => 'feature',
+                'title' => $title,
+                'body' => $body,
+            ]);
+
+            $service->publish($notification);
+        }
+    }
 }

@@ -40,6 +40,8 @@
                 <p style="font-size:14px;color:var(--text-primary);line-height:1.7;margin:0;">{{ $listing->description }}</p>
             </div>
 
+            @include('browse.partials.combo-card', ['profile' => $listing->vendorProfile])
+
             @if(count($dateList) > 0)
                 <div class="date-section">
                     <div class="section-title"><i class="ti ti-calendar"></i> Select Your Event Date</div>

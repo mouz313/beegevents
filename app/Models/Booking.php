@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-#[Fillable(['customer_id', 'booking_type', 'event_date', 'event_type', 'status', 'budget_input', 'total_price', 'negotiated_price', 'price_offer', 'price_offer_status', 'price_offer_note', 'price_offer_sent_at', 'price_negotiation_note', 'commission_amount', 'notes'])]
+#[Fillable(['customer_id', 'booking_type', 'event_date', 'time_slot', 'event_type', 'status', 'budget_input', 'total_price', 'negotiated_price', 'price_offer', 'price_offer_status', 'price_offer_note', 'price_offer_sent_at', 'price_negotiation_note', 'notes', 'agreement_accepted_at', 'invoice_no'])]
 class Booking extends Model
 {
     use HasFactory;
@@ -17,7 +17,24 @@ class Booking extends Model
     protected $casts = [
         'event_date' => 'date',
         'price_offer_sent_at' => 'datetime',
+        'agreement_accepted_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Booking $booking) {
+            if (empty($booking->invoice_no)) {
+                $booking->forceFill([
+                    'invoice_no' => 'INV-'.($booking->created_at?->year ?? date('Y')).'-'.str_pad((string) $booking->id, 6, '0', STR_PAD_LEFT),
+                ])->save();
+            }
+        });
+    }
+
+    public function getReferenceAttribute(): string
+    {
+        return 'BG-'.($this->created_at?->year ?? date('Y')).'-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
 
     public function price(): float
     {

@@ -30,6 +30,9 @@
                             <td>{{ $vendor->city }}</td>
                             <td>{{ $vendor->created_at->format('M d, Y') }}</td>
                             <td>
+                                <a href="{{ route('admin.vendors.show', $vendor) }}" class="btn btn-outline-gold btn-sm" title="View Details">
+                                    <i class="ti ti-eye"></i> View
+                                </a>
                                 <button class="btn btn-gold btn-sm verify-vendor" data-id="{{ $vendor->id }}">Approve</button>
                                 <button class="btn btn-ghost btn-sm suspend-vendor" data-id="{{ $vendor->id }}">Suspend</button>
                             </td>
@@ -67,6 +70,8 @@ document.querySelectorAll('.verify-vendor').forEach(btn => {
                 if (row) row.style.opacity = '0.3';
                 showToast('success', 'Vendor Verified', 'Vendor has been approved successfully.');
                 setTimeout(() => { if (row) row.remove(); }, 500);
+            } else if (data.message) {
+                showToast('error', 'KYC Incomplete', data.message);
             }
         });
     });

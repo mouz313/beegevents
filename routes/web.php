@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DisputeController as AdminDisputeController;
 use App\Http\Controllers\Admin\ExtraServiceController as AdminExtraServiceController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\PackagePurchaseController;
 use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingOptionsController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CorporateLeadController;
+use App\Http\Controllers\CorporateQuotationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
 use App\Http\Controllers\Customer\BudgetMatchController;
@@ -31,21 +33,24 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboard;
 use App\Http\Controllers\Customer\DisputeController as CustomerDisputeController;
 use App\Http\Controllers\Customer\MessageController as CustomerMessageController;
 use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController;
+use App\Http\Controllers\Customer\QuotationController as CustomerQuotationController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Vendor\BookingResponseController;
 use App\Http\Controllers\Vendor\CalendarController;
+use App\Http\Controllers\Vendor\ComboController as VendorComboController;
 use App\Http\Controllers\Vendor\DashboardController as VendorDashboard;
 use App\Http\Controllers\Vendor\ExtraServiceController as VendorExtraServiceController;
 use App\Http\Controllers\Vendor\FloorController;
 use App\Http\Controllers\Vendor\HallController;
 use App\Http\Controllers\Vendor\HallUnitController;
 use App\Http\Controllers\Vendor\InquiryController as VendorInquiryController;
+use App\Http\Controllers\Vendor\ManualBookingController;
 use App\Http\Controllers\Vendor\MessageController as VendorMessageController;
 use App\Http\Controllers\Vendor\OnboardingController;
-use App\Http\Controllers\Vendor\PackageController as VendorPackageController;
 use App\Http\Controllers\Vendor\ProfileController as VendorProfile;
+use App\Http\Controllers\Vendor\VendorPackageController;
 use App\Http\Controllers\Vendor\ServiceListingController;
 use App\Http\Controllers\Vendor\VendorMenuController;
 use App\Http\Controllers\WebhookController;
@@ -57,14 +62,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $stats = [
-        'vendors' => App\Models\VendorProfile::count(),
-        'listings' => ServiceListing::count(),
+        'vendors' => App\Models\VendorProfile::visible()->count(),
+        'listings' => ServiceListing::whereHas('vendorProfile', fn ($q) => $q->visible())->count(),
         'bookings' => Booking::count(),
         'reviews' => Review::count(),
     ];
     $featuredHalls = Hall::with('vendorProfile', 'hallUnits')
+        ->whereHas('vendorProfile', fn ($q) => $q->visible())
         ->take(4)->get();
     $featuredListings = ServiceListing::with('vendorProfile', 'serviceCategory')
+        ->whereHas('vendorProfile', fn ($q) => $q->visible())
         ->take(4)->get();
     $testimonials = Review::with('customer', 'vendorProfile')
         ->latest()->take(4)->get();
@@ -105,10 +112,11 @@ Route::controller(BrowseController::class)->group(function () {
     Route::get('/browse/hall/{hall}', 'hallDetail')->name('browse.hall');
     Route::get('/browse/listing/{listing}', 'listingDetail')->name('browse.listing');
     Route::get('/search', 'search')->name('browse.search');
-    Route::get('/packages', 'packages')->name('browse.packages');
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+
+Route::get('/combos/{combo}', [CustomerBookingController::class, 'comboShow'])->name('combos.show');
 
 Route::post('/webhook/stripe', [WebhookController::class, 'handleStripe'])->name('webhook.stripe');
 
@@ -121,6 +129,7 @@ Route::post('/inquiry', [InquiryController::class, 'store'])->name('inquiry.stor
 
 Route::controller(BookingOptionsController::class)->group(function () {
     Route::get('/booking/options', 'options')->name('booking.options');
+    Route::get('/booking/hall-options', 'hallOptions')->name('booking.hall-options');
     Route::post('/booking/budget', 'budget')->name('booking.budget');
 });
 
@@ -128,6 +137,11 @@ Route::controller(CorporateLeadController::class)->group(function () {
     Route::get('/corporate-inquiry', 'create')->name('corporate.leads.create');
     Route::post('/corporate-inquiry', 'store')->name('corporate.leads.store');
 })->middleware('throttle:3,60');
+
+Route::controller(CorporateQuotationController::class)->group(function () {
+    Route::get('/corporate/quotations/{token}', 'show')->name('corporate.quotations.show');
+    Route::post('/corporate/quotations/{token}/respond', 'respond')->name('corporate.quotations.respond');
+});
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
     Route::get('/dashboard', [CustomerDashboard::class, 'index'])->name('dashboard');
@@ -140,7 +154,6 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
 
     Route::get('/checkout', [CustomerBookingController::class, 'checkout'])->name('checkout');
     Route::post('/bookings', [CustomerBookingController::class, 'store'])->name('bookings.store');
-    Route::post('/packages/{package}/book', [CustomerBookingController::class, 'bookPackage'])->name('packages.book');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [CustomerBookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{booking}/download', [CustomerBookingController::class, 'download'])->name('bookings.download');
@@ -148,6 +161,10 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::post('/bookings/{booking}/cancel', [CustomerBookingController::class, 'cancel'])->name('bookings.cancel');
     Route::post('/bookings/{booking}/price-offer/accept', [CustomerBookingController::class, 'acceptPriceOffer'])->name('bookings.price-offer.accept');
     Route::post('/bookings/{booking}/price-offer/decline', [CustomerBookingController::class, 'declinePriceOffer'])->name('bookings.price-offer.decline');
+
+    Route::post('/combos/{combo}/book', [CustomerBookingController::class, 'bookCombo'])->name('combos.book');
+
+    Route::get('/corporate-quotations', [CustomerQuotationController::class, 'index'])->name('quotations.index');
 
     Route::get('/bookings/{booking}/pay', [CustomerPaymentController::class, 'showPayment'])->name('bookings.payment');
     Route::post('/bookings/{booking}/pay/intent', [CustomerPaymentController::class, 'createIntent'])->name('payments.intent');
@@ -165,8 +182,18 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::post('/budget-match', [BudgetMatchController::class, 'match'])->name('budget.match');
 });
 
-Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('vendor.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:vendor', 'vendor.access'])->prefix('vendor')->name('vendor.')->group(function () {
     Route::get('/dashboard', [VendorDashboard::class, 'index'])->name('dashboard');
+
+    Route::get('/packages', [VendorPackageController::class, 'index'])->name('packages.index');
+    Route::get('/packages/{package}/checkout', [VendorPackageController::class, 'checkout'])->name('packages.checkout');
+    Route::post('/packages/{package}/intent', [VendorPackageController::class, 'createIntent'])->name('packages.intent');
+    Route::post('/packages/{package}/confirm', [VendorPackageController::class, 'confirm'])->name('packages.confirm');
+    Route::post('/packages/{package}/manual', [VendorPackageController::class, 'manual'])->name('packages.manual');
+
+    Route::get('/combos', [VendorComboController::class, 'index'])->name('combos.index');
+    Route::post('/combos/{combo}', [VendorComboController::class, 'save'])->name('combos.save');
+
 
     Route::get('/profile', [VendorProfile::class, 'index'])->name('profile.create');
     Route::post('/profile', [VendorProfile::class, 'store'])->name('profile.store');
@@ -198,11 +225,6 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::put('/listings/{serviceListing}', [ServiceListingController::class, 'update'])->name('listings.update');
     Route::delete('/listings/{serviceListing}', [ServiceListingController::class, 'destroy'])->name('listings.destroy');
 
-    Route::get('/packages', [VendorPackageController::class, 'index'])->name('packages.index');
-    Route::post('/packages', [VendorPackageController::class, 'store'])->name('packages.store');
-    Route::put('/packages/{package}', [VendorPackageController::class, 'update'])->name('packages.update');
-    Route::delete('/packages/{package}', [VendorPackageController::class, 'destroy'])->name('packages.destroy');
-
     Route::get('/bookings', [BookingResponseController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}/download', [BookingResponseController::class, 'download'])->name('bookings.download');
     Route::get('/bookings/{booking}/invoice', [BookingResponseController::class, 'invoice'])->name('bookings.invoice');
@@ -216,6 +238,9 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::get('/calendar/slots', [CalendarController::class, 'getSlots'])->name('calendar.slots');
     Route::post('/calendar/block', [CalendarController::class, 'blockSlot'])->name('calendar.block');
     Route::post('/calendar/unblock', [CalendarController::class, 'unblockSlot'])->name('calendar.unblock');
+
+    Route::post('/manual-bookings', [ManualBookingController::class, 'store'])->name('manual-bookings.store');
+    Route::delete('/manual-bookings/{booking}', [ManualBookingController::class, 'destroy'])->name('manual-bookings.destroy');
 
     Route::get('/inquiries', [VendorInquiryController::class, 'index'])->name('inquiries.index');
     Route::put('/inquiries/{inquiry}', [VendorInquiryController::class, 'updateStatus'])->name('inquiries.update');
@@ -233,6 +258,10 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::post('/menu/items', [VendorMenuController::class, 'storeItem'])->name('menu.items.store');
     Route::put('/menu/items/{menuItem}', [VendorMenuController::class, 'updateItem'])->name('menu.items.update');
     Route::delete('/menu/items/{menuItem}', [VendorMenuController::class, 'destroyItem'])->name('menu.items.destroy');
+    Route::post('/menu/sets', [VendorMenuController::class, 'storeSet'])->name('menu.sets.store');
+    Route::put('/menu/sets/{menuSet}', [VendorMenuController::class, 'updateSet'])->name('menu.sets.update');
+    Route::delete('/menu/sets/{menuSet}', [VendorMenuController::class, 'destroySet'])->name('menu.sets.destroy');
+    Route::post('/menu/sets/items/partial', [VendorMenuController::class, 'setPartial'])->name('menu.sets.partial');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -246,6 +275,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/vendors/{vendorProfile}', [VendorVerificationController::class, 'destroy'])->name('vendors.destroy');
     Route::post('/vendors/{vendorProfile}/verify', [VendorVerificationController::class, 'verify'])->name('vendors.verify');
     Route::post('/vendors/{vendorProfile}/suspend', [VendorVerificationController::class, 'suspend'])->name('vendors.suspend');
+    Route::post('/vendors/{vendorProfile}/unblock', [VendorVerificationController::class, 'unblock'])->name('vendors.unblock');
     Route::post('/vendors/halls/{hall}/images', [VendorVerificationController::class, 'uploadHallImage'])->name('vendors.halls.images.upload');
     Route::delete('/vendors/halls/images/{hallImage}', [VendorVerificationController::class, 'deleteHallImage'])->name('vendors.halls.images.delete');
     Route::post('/halls/{hall}/floors', [VendorVerificationController::class, 'storeFloor'])->name('halls.floors.store');
@@ -266,7 +296,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/bookings/{booking}/status', [BookingVerificationController::class, 'updateStatus'])->name('bookings.status');
     Route::post('/bookings/{booking}/price', [BookingVerificationController::class, 'updatePrice'])->name('bookings.price');
     Route::post('/bookings/{booking}/price-offer', [BookingVerificationController::class, 'sendPriceOffer'])->name('bookings.price-offer');
-    Route::post('/bookings/{booking}/package', [BookingVerificationController::class, 'changePackage'])->name('bookings.package');
     Route::post('/bookings/{booking}/items', [BookingVerificationController::class, 'addItem'])->name('bookings.items.store');
     Route::delete('/bookings/{booking}/items/{bookingItem}', [BookingVerificationController::class, 'removeItem'])->name('bookings.items.destroy');
     Route::get('/bookings/{booking}/messages', [AdminMessageController::class, 'index'])->name('messages.index');
@@ -294,6 +323,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/packages/{package}', [PackageController::class, 'update'])->name('packages.update');
     Route::delete('/packages/{package}', [PackageController::class, 'destroy'])->name('packages.destroy');
 
+    Route::get('/package-purchases', [PackagePurchaseController::class, 'index'])->name('package-purchases.index');
+    Route::get('/package-purchases/{vendorPackagePurchase}', [PackagePurchaseController::class, 'show'])->name('package-purchases.show');
+    Route::post('/package-purchases/{vendorPackagePurchase}/approve', [PackagePurchaseController::class, 'approve'])->name('package-purchases.approve');
+    Route::post('/package-purchases/manual', [PackagePurchaseController::class, 'storeManual'])->name('package-purchases.manual');
+
     Route::get('/payouts', [PayoutController::class, 'index'])->name('payouts.index');
     Route::post('/payouts', [PayoutController::class, 'store'])->name('payouts.store');
     Route::post('/payouts/{payout}/processed', [PayoutController::class, 'markProcessed'])->name('payouts.processed');
@@ -302,6 +336,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/leads/{corporateLead}', [AdminCorporateLeadController::class, 'show'])->name('leads.show');
     Route::post('/leads/{corporateLead}/status', [AdminCorporateLeadController::class, 'updateStatus'])->name('leads.status');
     Route::delete('/leads/{corporateLead}', [AdminCorporateLeadController::class, 'destroy'])->name('leads.destroy');
+    Route::post('/leads/{corporateLead}/quotations', [AdminCorporateLeadController::class, 'storeQuotation'])->name('leads.quotations.store');
+    Route::put('/quotations/{quotation}', [AdminCorporateLeadController::class, 'updateQuotation'])->name('quotations.update');
+    Route::post('/quotations/{quotation}/status', [AdminCorporateLeadController::class, 'updateQuotationStatus'])->name('quotations.status');
+    Route::delete('/quotations/{quotation}', [AdminCorporateLeadController::class, 'destroyQuotation'])->name('quotations.destroy');
 
     Route::resource('/blog', App\Http\Controllers\Admin\BlogController::class)->except('show')->names('blog');
 

@@ -24,8 +24,15 @@ class HallController extends Controller
     public function store(Request $request)
     {
         $profile = auth()->user()->vendorProfile;
+        if (!$profile->hasHallSlot()) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => 'Hall limit reached for your current plan. Upgrade your package to add more halls.'], 422);
+            }
+            return redirect()->route('vendor.halls.index')->with('error', 'Hall limit reached for your current plan. Upgrade your package to add more halls.');
+        }
         $request->validate([
             'name' => 'required|string|max:255',
+            'venue_type' => 'nullable|in:marriage_hall,banquet_hall,farm_house,community_center,hotel_ballroom,rooftop,lawn,marquee',
             'address' => 'required|string',
             'description' => 'nullable|string',
             'has_floors' => 'boolean',
@@ -54,6 +61,7 @@ class HallController extends Controller
     {
         $hall->update($request->validate([
             'name' => 'required|string|max:255',
+            'venue_type' => 'nullable|in:marriage_hall,banquet_hall,farm_house,community_center,hotel_ballroom,rooftop,lawn,marquee',
             'address' => 'required|string',
             'description' => 'nullable|string',
             'has_floors' => 'boolean',

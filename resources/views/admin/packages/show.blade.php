@@ -15,7 +15,21 @@
             </div>
             <div class="card-body">
                 <h4 style="color:var(--gold);font-weight:700;font-size:24px;">PKR {{ number_format($package->total_price) }}</h4>
-                <span class="status-badge" style="background:rgba(74,101,114,0.12);color:var(--blue-grey);font-size:11px;">{{ ucfirst($package->event_type) }}</span>
+                <div class="d-flex flex-wrap gap-1 mb-2" style="font-size:11px;">
+                    @if($package->is_active)
+                        <span class="status-badge status-active" style="font-size:11px;">Active</span>
+                    @else
+                        <span class="status-badge status-suspended" style="font-size:11px;">Inactive</span>
+                    @endif
+                    <span class="status-badge" style="background:rgba(46,139,87,0.12);color:var(--green);font-size:11px;">{{ $package->duration_days }} days</span>
+                    @if($package->boost_tier)
+                        <span class="status-badge" style="background:rgba(212,160,23,0.12);color:var(--gold);font-size:11px;text-transform:capitalize;"><i class="ti ti-{{ $package->boost_tier === 'premium' ? 'crown' : 'star' }}"></i> {{ $package->boost_tier }} boost</span>
+                    @else
+                        <span class="status-badge" style="background:rgba(74,101,114,0.12);color:var(--blue-grey);font-size:11px;">No boost</span>
+                    @endif
+                    <span class="status-badge" style="background:rgba(74,101,114,0.12);color:var(--blue-grey);font-size:11px;">{{ $package->max_halls !== null ? $package->max_halls.' halls' : 'Unlimited halls' }}</span>
+                    <span class="status-badge" style="background:rgba(74,101,114,0.12);color:var(--blue-grey);font-size:11px;">{{ $package->max_listings !== null ? $package->max_listings.' services' : 'Unlimited services' }}</span>
+                </div>
                 @if($package->description)
                     <p class="mt-3" style="color:var(--text-muted);font-size:13px;">{{ $package->description }}</p>
                 @endif
@@ -28,7 +42,7 @@
     <div class="col-lg-7">
         <div class="admin-card">
             <div class="card-header">
-                <h5><i class="ti ti-list"></i> Package Items ({{ $package->packageItems->count() }})</h5>
+                <h5><i class="ti ti-list"></i> Combo Template Items ({{ $package->packageItems->count() }})</h5>
             </div>
             <div class="card-body p-0">
                 @if($package->packageItems->count() > 0)
@@ -37,6 +51,7 @@
                             <tr>
                                 <th>Type</th>
                                 <th>Item</th>
+                                <th>Price</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -58,12 +73,25 @@
                                                 <strong>{{ $item->itemable->title ?? 'Listing #'.$item->itemable_id }}</strong>
                                             @endif
                                         @else
-                                            <span class="text-muted">Item #{{ $item->itemable_id }}</span>
+                                            <span class="text-muted">Item #{{ $item->itemable_id }} (removed)</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($item->itemable)
+                                            <strong>PKR {{ number_format(class_basename($item->itemable_type) == 'HallUnit' ? $item->itemable->base_price : $item->itemable->price) }}</strong>
+                                        @else
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-end"><strong>Plan Price</strong></td>
+                                <td><strong style="color:var(--gold);">PKR {{ number_format($package->total_price) }}</strong></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 @else
                     <div class="text-center py-4">

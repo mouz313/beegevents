@@ -56,6 +56,30 @@
                         <option value="birthday" {{ request('event_type') === 'birthday' ? 'selected' : '' }}>Birthday</option>
                     </select>
                 </div>
+                <div class="search-divider"></div>
+                <div class="search-field search-field-type">
+                    <i class="ti ti-building-arch"></i>
+                    <select name="venue_type">
+                        <option value="">All Venues</option>
+                        <option value="marriage_hall" {{ request('venue_type') === 'marriage_hall' ? 'selected' : '' }}>Marriage Hall</option>
+                        <option value="banquet_hall" {{ request('venue_type') === 'banquet_hall' ? 'selected' : '' }}>Banquet Hall</option>
+                        <option value="farm_house" {{ request('venue_type') === 'farm_house' ? 'selected' : '' }}>Farm House</option>
+                        <option value="community_center" {{ request('venue_type') === 'community_center' ? 'selected' : '' }}>Community Center</option>
+                        <option value="hotel_ballroom" {{ request('venue_type') === 'hotel_ballroom' ? 'selected' : '' }}>Hotel Ballroom</option>
+                        <option value="rooftop" {{ request('venue_type') === 'rooftop' ? 'selected' : '' }}>Rooftop</option>
+                        <option value="lawn" {{ request('venue_type') === 'lawn' ? 'selected' : '' }}>Lawn</option>
+                        <option value="marquee" {{ request('venue_type') === 'marquee' ? 'selected' : '' }}>Marquee</option>
+                    </select>
+                </div>
+                <div class="search-divider"></div>
+                <div class="search-field search-field-type">
+                    <i class="ti ti-clock-hour-3"></i>
+                    <select name="time_slot">
+                        <option value="">Any Time</option>
+                        <option value="noon" {{ request('time_slot') === 'noon' ? 'selected' : '' }}>Noon</option>
+                        <option value="evening" {{ request('time_slot') === 'evening' ? 'selected' : '' }}>Evening</option>
+                    </select>
+                </div>
                 <button type="submit"><i class="ti ti-search"></i> Search</button>
             </form>
         </div>
@@ -109,6 +133,10 @@
                             @endif
                         </div>
                         <div class="card-badge-group">
+                            @include('browse.partials.feature-badge', ['profile' => $hall->vendorProfile])
+                            @if($hall->venue_type)
+                                <span class="badge-unit">{{ ucwords(str_replace('_', ' ', $hall->venue_type)) }}</span>
+                            @endif
                             @if($hall->hallUnits->count() > 0)
                                 <span class="badge-unit">{{ $hall->hallUnits->count() }} unit{{ $hall->hallUnits->count() > 1 ? 's' : '' }}</span>
                             @endif
@@ -148,6 +176,7 @@
                 <div class="col-md-3">
                     <a href="{{ route('browse.listing', $listing) }}" class="browse-card browse-card-hover d-flex flex-column">
                         <div class="card-badge-group">
+                            @include('browse.partials.feature-badge', ['profile' => $listing->vendorProfile])
                             <span class="badge-category">{{ $listing->serviceCategory->name ?? 'Service' }}</span>
                         </div>
                         <div class="card-title">{{ $listing->title }}</div>

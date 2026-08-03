@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 
-@section('title', 'Booking #' . $booking->id)
+@section('title', 'Booking ' . $booking->reference)
 
 @section('content')
 @php
@@ -12,13 +12,12 @@
     $paidAmount = $booking->payments->whereIn('status', ['received'])->sum('amount');
     $agreedPrice = $booking->price();
     $remainingAmount = max(0, $agreedPrice - $paidAmount);
-    $packageTitle = str_starts_with($booking->notes ?? '', 'Package: ') ? substr($booking->notes, 9) : null;
 @endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4" style="flex-wrap:wrap;gap:8px;">
     <div>
         <h2 style="font-size:20px;font-weight:600;margin:0;">
-            <i class="ti ti-receipt"></i> Booking #{{ $booking->id }}
+            <i class="ti ti-receipt"></i> Booking {{ $booking->reference }}
         </h2>
         <span style="font-size:13px;color:var(--text-muted);">{{ $booking->customer->name ?? 'N/A' }} · {{ $booking->customer->email ?? '' }}</span>
     </div>
@@ -89,6 +88,7 @@
                     <div class="col-md-4 mb-2"><strong>Customer:</strong> {{ $booking->customer->name ?? 'N/A' }}</div>
                     <div class="col-md-4 mb-2"><strong>Email:</strong> {{ $booking->customer->email ?? 'N/A' }}</div>
                     <div class="col-md-4 mb-2"><strong>Date:</strong> {{ \Carbon\Carbon::parse($booking->event_date)->format('M d, Y') }}</div>
+                    <div class="col-md-4 mb-2"><strong>Time:</strong> {{ $booking->time_slot ? ucfirst($booking->time_slot) : '—' }}</div>
                     <div class="col-md-4 mb-2"><strong>Type:</strong> {{ ucfirst($booking->event_type) }}</div>
                     <div class="col-md-4 mb-2"><strong>Requested:</strong> {{ $booking->created_at->format('M d, Y') }}</div>
                     <div class="col-md-4 mb-2">
@@ -99,30 +99,15 @@
                     </div>
                 </div>
 
-                @if($booking->booking_type == 'package')
-                    <div class="row mt-1" style="border-top:1px dashed var(--border);padding-top:10px;">
-                        <div class="col-md-8">
-                            <span class="status-badge status-pending">Package</span>
-                            <strong style="margin-left:6px;">{{ $packageTitle ?? $booking->notes ?? 'Package booking' }}</strong>
-                        </div>
-                        <div class="col-md-4" style="text-align:right;">
-                            <form id="changePackageForm" class="d-inline-flex gap-2" style="align-items:center;">
-                                @csrf
-                                <select class="form-control-admin" name="package_id" style="padding:5px 8px;font-size:12px;max-width:170px;">
-                                    @foreach($packages as $pkg)
-                                        <option value="{{ $pkg->id }}" {{ $packageTitle && $packageTitle == $pkg->title ? 'selected' : '' }}>{{ $pkg->title }} — PKR {{ number_format($pkg->total_price) }}</option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="btn btn-ghost btn-sm">Change Package</button>
-                            </form>
-                        </div>
-                    </div>
-                @endif
-
                 @if($booking->notes)
                     <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px;">
                         <span style="font-size:12px;color:var(--text-muted);">Notes:</span>
                         <p style="margin:2px 0 0;font-size:13px;">{{ $booking->notes }}</p>
+                    </div>
+                @endif
+                @if($booking->agreement_accepted_at)
+                    <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px;font-size:12px;color:var(--green);">
+                        <i class="ti ti-check"></i> <strong>Agreement accepted</strong> on {{ \Carbon\Carbon::parse($booking->agreement_accepted_at)->format('M d, Y g:i A') }}
                     </div>
                 @endif
             </div>
@@ -137,16 +122,16 @@
             </div>
             <div class="card-body p-0">
                 <div id="addItemForm" style="display:none;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--cream);">
-                    <form id="addItemFormInner" class="d-flex gap-2" style="align-items:center;">
+                    <form id="addItemFormInner" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                         @csrf
-                        <select class="form-control-admin" name="type" id="addItemType" style="max-width:130px;">
+                        <select class="form-control-admin" name="type" id="addItemType" style="max-width:120px;">
                             <option value="hall_unit">Hall Unit</option>
                             <option value="service_listing">Service</option>
                         </select>
-                        <select class="form-control-admin" name="itemable_id" id="addItemId" style="flex:1;min-width:180px;">
+                        <select class="form-control-admin" name="itemable_id" id="addItemId" style="flex:1;min-width:200px;">
                             <optgroup label="Hall Units">
                                 @foreach($hallUnits as $unit)
-                                    <option value="{{ $unit->id }}" data-type="hall_unit">{{ $unit->unit_name }} — {{ $unit->hall?->name ?? '' }} (PKR {{ number_format($unit->base_price) }})</option>
+                                    <option value="{{ $unit->id }}" data-type="hall_unit" data-vendor="{{ $unit->hall?->vendor_profile_id }}">{{ $unit->unit_name }} — {{ $unit->hall?->name ?? '' }} (PKR {{ number_format($unit->base_price) }})</option>
                                 @endforeach
                             </optgroup>
                             <optgroup label="Services">
@@ -155,8 +140,19 @@
                                 @endforeach
                             </optgroup>
                         </select>
+                        <select class="form-control-admin" name="time_slot" id="addItemSlot" style="max-width:120px;">
+                            <option value="">Any slot</option>
+                            <option value="noon">Noon</option>
+                            <option value="evening">Evening</option>
+                        </select>
+                        <select class="form-control-admin" name="menu_set_id" id="addItemMenuSet" style="max-width:160px;display:none;">
+                            <option value="">No menu set</option>
+                        </select>
+                        <select class="form-control-admin" name="extras[]" id="addItemExtras" multiple style="max-width:220px;display:none;">
+                        </select>
                         <button type="submit" class="btn btn-gold btn-sm">Add</button>
                     </form>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Menu sets &amp; extras are filtered to the selected hall unit's vendor.</div>
                 </div>
 
                 <table class="table-admin">
@@ -164,6 +160,9 @@
                         <tr>
                             <th>Type</th>
                             <th>Vendor</th>
+                            <th>Slot</th>
+                            <th>Menu</th>
+                            <th>Extras</th>
                             <th>Price</th>
                             <th>Status</th>
                             <th></th>
@@ -174,6 +173,22 @@
                             <tr>
                                 <td>{{ str_replace('_', ' ', class_basename($item->itemable_type)) }} #{{ $item->itemable_id }}</td>
                                 <td>{{ $item->vendorProfile->business_name ?? 'N/A' }}</td>
+                                <td>{{ $item->time_slot ? ucfirst($item->time_slot) : '—' }}</td>
+                                <td>{{ $item->menuSet?->name ?? '—' }}
+                                    @if($item->guests)
+                                        <div style="font-size:11px;color:var(--text-muted);">Guests: {{ number_format($item->guests) }}</div>
+                                    @endif
+                                    @if($item->catering_mode)
+                                        <div style="font-size:11px;color:var(--text-muted);">Catering: {{ ['internal' => 'In-house', 'external' => 'Outside / third-party', 'none' => 'Self-arrange'][$item->catering_mode] ?? ucfirst($item->catering_mode) }}</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!empty($item->extras))
+                                        {{ collect($item->extras)->pluck('name')->implode(', ') }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td>PKR {{ number_format($item->price) }}</td>
                                 <td>
                                     <span class="status-badge status-{{ $item->vendor_status == 'accepted' ? 'confirmed' : ($item->vendor_status == 'declined' ? 'cancelled' : 'pending') }}">
@@ -188,11 +203,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center" style="padding:16px;color:var(--text-muted);">
+                                <td colspan="8" class="text-center" style="padding:16px;color:var(--text-muted);">
                                     No items attached to this booking.
-                                    @if($booking->booking_type == 'package')
-                                        This is a package booking — its services come from the package definition.
-                                    @endif
                                 </td>
                             </tr>
                         @endforelse
@@ -236,10 +248,6 @@
                         <strong style="color:var(--red);">PKR {{ number_format($booking->price_offer) }}</strong>
                     </div>
                 @endif
-                <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
-                    <span style="color:var(--text-muted);">Commission</span>
-                    <strong>PKR {{ number_format($booking->commission_amount) }}</strong>
-                </div>
                 <hr style="border-color:var(--border);margin:12px 0;">
                 <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
                     <span style="color:var(--text-muted);">Paid</span>
@@ -386,7 +394,7 @@ document.querySelectorAll('.booking-status').forEach(btn => {
         const status = this.dataset.status;
         if (status === 'cancelled' && !confirm('Cancel this booking? This will process refunds if applicable.')) return;
         postJson('/admin/bookings/{{ $booking->id }}/status', { status: status })
-            .then(data => handleResult(data, 'Status Updated', 'Booking #{{ $booking->id }} status updated.'));
+            .then(data => handleResult(data, 'Status Updated', '{{ $booking->reference }} status updated.'));
     });
 });
 
@@ -395,10 +403,53 @@ document.getElementById('toggleAddItem')?.addEventListener('click', function () 
     f.style.display = f.style.display === 'none' ? 'block' : 'none';
 });
 
+const unitExtras = @json($hallUnits->mapWithKeys(fn($u) => [$u->id => $u->extraServices->map(fn($e) => ['id' => $e->id, 'label' => $e->name.' (+PKR '.number_format($e->price).')'])])->toArray());
+const vendorMenuSets = @json($menuSetsByVendor->map(fn($sets) => $sets->map(fn($s) => ['id' => $s->id, 'label' => $s->name.' (PKR '.number_format($s->getTotalPriceAttribute()).')']))->toArray());
+
+const addItemMenuSet = document.getElementById('addItemMenuSet');
+const addItemExtras = document.getElementById('addItemExtras');
+
+function refreshItemPickers() {
+    const idSel = document.getElementById('addItemId');
+    const opt = idSel.selectedOptions[0];
+    const isHall = opt && opt.dataset.type === 'hall_unit';
+    const vendorId = opt ? opt.dataset.vendor : null;
+    const unitId = parseInt(idSel.value, 10);
+
+    addItemMenuSet.style.display = isHall ? 'inline-block' : 'none';
+    addItemExtras.style.display = isHall ? 'inline-block' : 'none';
+    document.getElementById('addItemSlot').style.display = isHall ? 'inline-block' : 'none';
+
+    addItemMenuSet.innerHTML = '<option value="">No menu set</option>';
+    (vendorMenuSets[vendorId] || []).forEach(function (s) {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.label;
+        addItemMenuSet.appendChild(o);
+    });
+
+    addItemExtras.innerHTML = '';
+    (unitExtras[unitId] || []).forEach(function (e) {
+        const o = document.createElement('option');
+        o.value = e.id; o.textContent = e.label;
+        addItemExtras.appendChild(o);
+    });
+}
+document.getElementById('addItemId').addEventListener('change', refreshItemPickers);
+refreshItemPickers();
+
 document.getElementById('addItemFormInner')?.addEventListener('submit', function (e) {
     e.preventDefault();
     const fd = new FormData(this);
-    postJson('/admin/bookings/{{ $booking->id }}/items', Object.fromEntries(fd))
+    const obj = Object.fromEntries(fd);
+    const opt = document.getElementById('addItemId').selectedOptions[0];
+    if (opt && opt.dataset.type === 'service_listing') {
+        delete obj.time_slot;
+        delete obj.menu_set_id;
+        delete obj.extras;
+    } else {
+        obj.extras = Array.from(document.getElementById('addItemExtras').selectedOptions).map(o => ({ id: +o.value }));
+    }
+    postJson('/admin/bookings/{{ $booking->id }}/items', obj)
         .then(data => handleResult(data, 'Item Added', 'Item added to booking.'));
 });
 
@@ -408,14 +459,6 @@ document.querySelectorAll('.remove-item').forEach(btn => {
         deleteRequest('/admin/bookings/{{ $booking->id }}/items/' + this.dataset.id)
             .then(data => handleResult(data, 'Item Removed', 'Item removed from booking.'));
     });
-});
-
-document.getElementById('changePackageForm')?.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const fd = new FormData(this);
-    if (!confirm('Change package? This will replace the items and price.')) return;
-    postJson('/admin/bookings/{{ $booking->id }}/package', Object.fromEntries(fd))
-        .then(data => handleResult(data, 'Package Changed', 'Booking package updated.'));
 });
 
 document.getElementById('togglePriceForm')?.addEventListener('click', function () {

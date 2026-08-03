@@ -19,7 +19,7 @@
     @endif
 
     <div class="row g-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="profile-card">
                 <div class="card-body-custom" style="padding:20px;">
                     <div class="form-label-custom mb-2">Categories</div>
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-5">
             <div class="profile-card">
                 <div class="card-header-custom" style="padding:16px 20px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--charcoal);flex-shrink:0;">
@@ -71,6 +71,60 @@
                                 <i class="ti ti-knife"></i>
                                 <h5 style="margin-top:12px;">No menu yet</h5>
                                 <p class="text-muted" style="font-size:13px;">Create a category first, then add items to it.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="profile-card">
+                <div class="card-header-custom" style="padding:16px 20px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--charcoal);flex-shrink:0;">
+                        <i class="ti ti-license"></i>
+                    </div>
+                    <h4 style="font-size:15px;">Menu Sets <small style="font-size:10px;color:var(--text-muted);">(Punjab multiple-option law)</small></h4>
+                    <button class="btn-gold" id="addSetBtn" style="padding:8px 14px;font-size:12px;margin-left:auto;" data-bs-toggle="modal" data-bs-target="#setModal">
+                        <i class="ti ti-plus"></i> Add Set
+                    </button>
+                </div>
+                <div class="card-body-custom" style="padding:20px;">
+                    @forelse($menuSets as $set)
+                        <div class="menu-cat-item {{ $loop->first ? 'active' : '' }}" data-set-id="{{ $set->id }}" style="cursor:pointer;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div style="flex:1;">
+                                    <strong style="font-size:14px;color:var(--charcoal);">{{ $set->name }}</strong>
+                                    <div style="font-size:11px;color:var(--text-muted);">
+                                        {{ $set->items_count }} item(s)
+                                        @if($set->is_active)
+                                            <span class="badge bg-success" style="font-size:9px;">Active</span>
+                                        @else
+                                            <span class="badge bg-secondary" style="font-size:9px;">Inactive</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-danger btn-delete-set" data-id="{{ $set->id }}" title="Delete" style="padding:2px 8px;font-size:11px;">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="empty-state" style="padding:24px 12px;">
+                            <i class="ti ti-license"></i>
+                            <p class="text-muted" style="font-size:13px;margin:8px 0 0;">No menu sets yet. Create Menu 1, Menu 2 etc. with selectable items.</p>
+                        </div>
+                    @endforelse
+                    <hr style="border-color:var(--border);margin:12px 0;">
+                    <div id="setArea">
+                        @php $firstSet = $menuSets->first(); @endphp
+                        @if($firstSet)
+                            @include('vendor.menu.sets', ['set' => $firstSet, 'items' => $firstSet->vendorProfile->menuItems()->with('menuCategory')->get()])
+                        @else
+                            <div class="empty-state" style="padding:20px 12px;">
+                                <p class="text-muted" style="font-size:12px;margin:0;">Select a set to see its items.</p>
                             </div>
                         @endif
                     </div>
@@ -140,6 +194,72 @@
         </div>
     </div>
 </div>
+
+{{-- Set Modal --}}
+<div class="modal fade" id="setModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:14px;border:none;">
+            <form id="setForm">
+                <div class="modal-header" style="border:none;padding:20px 24px 0;">
+                    <h5 style="font-weight:700;" id="setModalTitle">Add Menu Set</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding:20px 24px;">
+                    <input type="hidden" id="set_id">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" style="font-size:12px;font-weight:600;">Set Name</label>
+                            <input type="text" class="form-control" id="set_name" name="name" required placeholder="e.g. Menu 1 (Standard)">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="set_active" name="is_active" value="1" checked>
+                                <label class="form-check-label" for="set_active" style="font-size:13px;">Active (visible to customers)</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:12px;font-weight:600;">Description</label>
+                            <textarea class="form-control" id="set_description" name="description" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:12px;font-weight:600;">Select Items for this Set</label>
+                            <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:12px;">
+                                @forelse($categories as $cat)
+                                    <div class="mb-2">
+                                        <div style="font-size:12px;font-weight:700;color:var(--charcoal);text-transform:uppercase;margin-bottom:4px;">{{ $cat->name }}</div>
+                                        <div class="row g-1">
+                                            @forelse($cat->menuItems as $item)
+                                                <div class="col-6">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input set-item-check" type="checkbox" name="item_ids[]" value="{{ $item->id }}" id="set_item_{{ $item->id }}">
+                                                        <label class="form-check-label" for="set_item_{{ $item->id }}" style="font-size:12px;">
+                                                            {{ $item->name }}
+                                                            @if($item->price)
+                                                                <span class="text-muted">(PKR {{ number_format($item->price) }})</span>
+                                                            @endif
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <div class="col-12 text-muted" style="font-size:12px;">No items.</div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-muted" style="font-size:13px;">Create menu items first, then build a set.</div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border:none;padding:0 24px 24px;">
+                    <button type="button" class="btn-outline-gold" data-bs-dismiss="modal" style="padding:8px 18px;font-size:13px;">Cancel</button>
+                    <button type="submit" class="btn-gold" style="padding:8px 18px;font-size:13px;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -165,6 +285,7 @@
 <script>
 const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
 const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
+const setModal = new bootstrap.Modal(document.getElementById('setModal'));
 let activeCategoryId = {{ $categories->first()->id ?? 'null' }};
 
 // ---- Category selection ----
@@ -309,6 +430,108 @@ document.getElementById('categoryModal').addEventListener('hidden.bs.modal', fun
     document.getElementById('categoryModalTitle').textContent = 'Add Category';
 });
 
+// ---- Menu Set add/edit ----
+let activeSetId = null;
+
+document.getElementById('addSetBtn')?.addEventListener('click', function() {
+    document.getElementById('setModalTitle').textContent = 'Add Menu Set';
+    document.getElementById('set_id').value = '';
+    document.getElementById('setForm').reset();
+    document.getElementById('set_active').checked = true;
+    document.querySelectorAll('.set-item-check').forEach(c => c.checked = false);
+});
+
+document.getElementById('setForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('set_id').value;
+    const url = id ? `{{ url('vendor/menu/sets') }}/${id}` : '{{ route("vendor.menu.sets.store") }}';
+    const formData = new FormData(this);
+    if (id) formData.append('_method', 'PUT');
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => { if (data.success) location.reload(); });
+});
+
+// ---- Set selection ----
+function selectSet(id) {
+    activeSetId = id;
+    document.querySelectorAll('.menu-cat-item').forEach(el => el.classList.remove('active'));
+    const el = document.querySelector(`.menu-cat-item[data-set-id="${id}"]`);
+    if (el) el.classList.add('active');
+
+    fetch('{{ route("vendor.menu.sets.partial") }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ set_id: id })
+    })
+    .then(res => res.text())
+    .then(html => {
+        document.getElementById('setArea').innerHTML = html;
+        bindSetActions();
+    });
+}
+
+document.querySelectorAll('.menu-cat-item[data-set-id]').forEach(el => {
+    el.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        selectSet(el.dataset.setId);
+    });
+});
+
+document.querySelectorAll('.btn-delete-set').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('Delete this menu set?')) return;
+        fetch(`{{ url('vendor/menu/sets') }}/${btn.dataset.id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: new URLSearchParams({ _method: 'DELETE' })
+        })
+        .then(res => res.json())
+        .then(data => { if (data.success) location.reload(); });
+    });
+});
+
+function bindSetActions() {
+    document.querySelectorAll('.btn-edit-set').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('setModalTitle').textContent = 'Edit Menu Set';
+            document.getElementById('set_id').value = btn.dataset.id;
+            document.getElementById('set_name').value = btn.dataset.name;
+            document.getElementById('set_description').value = btn.dataset.description || '';
+            document.getElementById('set_active').checked = btn.dataset.active === '1';
+
+            document.querySelectorAll('.set-item-check').forEach(c => c.checked = false);
+            (btn.dataset.itemIds || '').split(',').filter(Boolean).forEach(id => {
+                const checkbox = document.getElementById(`set_item_${id}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            setModal.show();
+        });
+    });
+}
+
+document.getElementById('setModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('setForm').reset();
+    document.getElementById('set_id').value = '';
+    document.getElementById('setModalTitle').textContent = 'Add Menu Set';
+});
+
 bindItemActions();
+bindSetActions();
 </script>
 @endpush

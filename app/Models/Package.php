@@ -5,13 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['vendor_profile_id', 'title', 'description', 'total_price', 'event_type'])]
+#[Fillable(['title', 'description', 'total_price', 'duration_days', 'boost_tier', 'max_halls', 'max_listings', 'is_active'])]
 class Package extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'total_price' => 'float',
+        'duration_days' => 'integer',
+        'max_halls' => 'integer',
+        'max_listings' => 'integer',
+        'is_active' => 'boolean',
+    ];
 
     /**
      * @return HasMany<PackageItem>
@@ -21,11 +28,13 @@ class Package extends Model
         return $this->hasMany(PackageItem::class);
     }
 
-    /**
-     * @return BelongsTo<VendorProfile>
-     */
-    public function vendorProfile(): BelongsTo
+    public function combos(): HasMany
     {
-        return $this->belongsTo(VendorProfile::class);
+        return $this->hasMany(VendorCombo::class);
+    }
+
+    public function isActive(): bool
+    {
+        return (bool) $this->is_active;
     }
 }

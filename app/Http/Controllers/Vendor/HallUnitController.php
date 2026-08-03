@@ -29,10 +29,18 @@ class HallUnitController extends Controller
             'max_capacity' => 'required|integer|min:1|gte:min_capacity',
             'menu_summary' => 'nullable|string',
             'decor_type' => 'required|in:fixed,outsourced,customizable',
+            'catering_mode' => 'nullable|in:internal,external,both,none',
+            'food_service_style' => 'nullable|in:static_place,on_table,both',
+            'staff_male' => 'nullable|integer|min:0',
+            'staff_female' => 'nullable|integer|min:0',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
             'base_price' => 'required|numeric|min:0',
         ]);
 
-        $unit = $hall->hallUnits()->create($request->all());
+        $data = $request->all();
+        $data['amenities'] = $request->input('amenities', []);
+        $unit = $hall->hallUnits()->create($data);
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'unit' => $unit->load('floor')]);
@@ -49,10 +57,18 @@ class HallUnitController extends Controller
             'max_capacity' => 'required|integer|min:1|gte:min_capacity',
             'menu_summary' => 'nullable|string',
             'decor_type' => 'required|in:fixed,outsourced,customizable',
+            'catering_mode' => 'nullable|in:internal,external,both,none',
+            'food_service_style' => 'nullable|in:static_place,on_table,both',
+            'staff_male' => 'nullable|integer|min:0',
+            'staff_female' => 'nullable|integer|min:0',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
             'base_price' => 'required|numeric|min:0',
         ]);
 
-        $hallUnit->update($request->all());
+        $data = $request->all();
+        $data['amenities'] = $request->input('amenities', []);
+        $hallUnit->update($data);
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'unit' => $hallUnit->load('floor')]);

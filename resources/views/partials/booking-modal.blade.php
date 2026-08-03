@@ -14,25 +14,17 @@
                 <div id="bmStep1" class="p-4">
                     <p class="bm-subtitle mb-4">Choose how you'd like to book your event.</p>
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <button type="button" class="bm-card w-100" data-bm-card="package">
-                                <span class="bm-card-step">1</span>
-                                <i class="ti ti-gift"></i>
-                                <strong>Package</strong>
-                                <span>Ready-made packages by hall owners</span>
-                            </button>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <button type="button" class="bm-card w-100" data-bm-card="custom">
-                                <span class="bm-card-step">2</span>
+                                <span class="bm-card-step">1</span>
                                 <i class="ti ti-list-details"></i>
                                 <strong>Custom</strong>
                                 <span>Pick services, get a quote, then discuss</span>
                             </button>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <button type="button" class="bm-card w-100" data-bm-card="budget">
-                                <span class="bm-card-step">3</span>
+                                <span class="bm-card-step">2</span>
                                 <i class="ti ti-wallet"></i>
                                 <strong>Budget</strong>
                                 <span>Enter amount &amp; guests, we suggest a bundle</span>
@@ -41,23 +33,70 @@
                     </div>
                 </div>
 
-                {{-- Step 2: Package --}}
-                <div id="bmStepPackage" class="d-none p-4">
-                    <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
-                    <h6 class="bm-step-title">Choose a date &amp; package</h6>
-                    <input type="date" id="bmPackageDate" class="form-control bm-input mb-3">
-                    <div id="bmPackageList">
-                        <div class="bm-loading">Loading packages...</div>
-                    </div>
-                </div>
-
                 {{-- Step 2: Custom --}}
                 <div id="bmStepCustom" class="d-none p-4">
                     <button type="button" class="btn btn-sm bm-btn-outline mb-3" data-bm-back><i class="ti ti-arrow-left"></i> Back</button>
-                    <h6 class="bm-step-title">Choose a date &amp; services</h6>
-                    <input type="date" id="bmCustomDate" class="form-control bm-input mb-3">
+                    <h6 class="bm-step-title">Choose a date, time &amp; services</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <input type="date" id="bmCustomDate" class="form-control bm-input">
+                        </div>
+                        <div class="col-md-6">
+                            <select id="bmCustomTimeSlot" class="form-select bm-input">
+                                <option value="noon">Noon</option>
+                                <option value="evening">Evening</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="bmHallSection" style="display:none;margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <strong style="font-weight:700;color:var(--charcoal);font-size:14px;"><i class="ti ti-building"></i> Hall Unit</strong>
+                            <button type="button" class="btn btn-sm bm-btn-outline" id="bmHallReviewBtn" style="padding:3px 10px;font-size:11px;">
+                                <i class="ti ti-eye"></i> Review hall services
+                            </button>
+                        </div>
+                        <div id="bmHallReview" style="display:none;background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--text-muted);"></div>
+                        <select id="bmHallUnit" class="form-select bm-input mb-2"></select>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label bm-label">Number of Guests</label>
+                                <input type="number" id="bmHallGuests" class="form-control bm-input" min="1" placeholder="e.g. 200">
+                                <div id="bmHallGuestsHint" style="font-size:11px;color:var(--text-muted);"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label bm-label">Catering</label>
+                                <select id="bmHallCatering" class="form-select bm-input">
+                                    <option value="">Select catering option</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="bmHallMenuWrap" style="display:none;margin-bottom:8px;">
+                            <label class="form-label bm-label">Menu Set (optional)</label>
+                            <select id="bmHallMenu" class="form-select bm-input"></select>
+                        </div>
+                        <div id="bmHallExtras" style="display:none;">
+                            <label class="form-label bm-label">Extras (optional)</label>
+                            <div id="bmHallExtrasList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                        </div>
+                        <div id="bmHallSummary" style="display:none;margin-top:12px;background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;"></div>
+                    </div>
                     <div id="bmCategoryList">
                         <div class="bm-loading">Loading services...</div>
+                    </div>
+                    <div id="bmAgreement" class="mt-3" style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--cream);">
+                        <label class="form-check" style="margin:0;font-size:13px;">
+                            <input type="checkbox" class="form-check-input" id="bmAgreeCheck" style="margin-right:6px;">
+                            I agree to the <a href="#" id="bmAgreeToggle" style="color:var(--gold-dark);font-weight:600;" onclick="return false;">BeeG Events Booking Agreement</a>
+                        </label>
+                        <div id="bmAgreeText" style="display:none;margin-top:10px;font-size:12px;color:var(--text-muted);line-height:1.6;border-top:1px dashed var(--border);padding-top:10px;">
+                            <strong style="color:var(--charcoal);">Booking Agreement</strong><br>
+                            <ul style="margin:6px 0 0 16px;padding:0;">
+                                <li>Your booking is a request until the vendor confirms and an advance payment is received.</li>
+                                <li>Prices shown are estimates; the final agreed price is confirmed by the vendor.</li>
+                                <li>Held slots auto-release after 24 hours if not confirmed.</li>
+                                <li>Cancellations are subject to the platform's refund policy.</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
                         <button type="button" class="btn bm-btn-outline flex-fill" id="bmCustomAddCart">Add Selected to Cart</button>
@@ -95,6 +134,18 @@
                                 <option value="home">Home</option>
                                 <option value="other">Other</option>
                             </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label bm-label">Event Time</label>
+                            <select id="bmBudgetTimeSlot" class="form-select bm-input">
+                                <option value="">Any</option>
+                                <option value="noon">Noon</option>
+                                <option value="evening">Evening</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label bm-label">Event Date</label>
+                            <input type="date" id="bmBudgetDate" class="form-control bm-input">
                         </div>
                     </div>
                     <button type="button" class="btn bm-btn-gold w-100 mb-3" id="bmBudgetFind">Find Bundle</button>
@@ -170,11 +221,11 @@
     var CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
     var bmHallId = null;
     var bmOptions = null;
+    var bmHallUnitData = null;
     var bmSelected = {};
 
     var steps = {
         base: document.getElementById('bmStep1'),
-        package: document.getElementById('bmStepPackage'),
         custom: document.getElementById('bmStepCustom'),
         budget: document.getElementById('bmStepBudget')
     };
@@ -210,14 +261,13 @@
     }
 
     function loadOptions() {
-        if (bmOptions) { renderPackageList(); renderCategoryList(); return; }
+        if (bmOptions) { renderCategoryList(); return; }
         var url = '{{ route("booking.options") }}';
         if (bmHallId) url += '?hall_id=' + bmHallId;
         fetch(url, { headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 bmOptions = data;
-                renderPackageList();
                 renderCategoryList();
                 populateCities();
             })
@@ -234,64 +284,6 @@
             opt.value = c;
             opt.textContent = c;
             sel.appendChild(opt);
-        });
-    }
-
-    /* ---------- Package tab ---------- */
-    function renderPackageList() {
-        var list = document.getElementById('bmPackageList');
-        if (!list) return;
-        if (!bmOptions.packages.length) {
-            list.innerHTML = '<div class="alert alert-info mb-0">No packages available yet.</div>';
-            return;
-        }
-        var html = '';
-        bmOptions.packages.forEach(function (p) {
-            var vendorLine = p.vendor ? p.vendor.business_name + (p.vendor.city ? ' &middot; ' + p.vendor.city : '') : 'BeeG Events';
-            html += '<div class="bm-package-item">' +
-                '<div class="bm-pkg-info">' +
-                '<div class="bm-pkg-title">' + p.title + '</div>' +
-                '<div class="bm-pkg-meta">' + vendorLine +
-                (p.event_type ? ' &middot; ' + p.event_type : '') +
-                ' &middot; ' + p.items.length + ' item(s)</div>' +
-                (p.description ? '<div class="bm-pkg-meta">' + p.description + '</div>' : '') +
-                '</div>' +
-                '<div class="text-end" style="white-space:nowrap;">' +
-                '<div class="bm-pkg-price">PKR ' + Number(p.total_price).toLocaleString() + '</div>' +
-                '<button type="button" class="btn btn-sm bm-btn-gold mt-1" data-book-package="' + p.id + '">Book</button>' +
-                '</div></div>';
-        });
-        list.innerHTML = html;
-    }
-
-    function bookPackage(pkgId) {
-        var date = document.getElementById('bmPackageDate').value;
-        if (!date) { showToast('Please choose an event date.', 'warning'); return; }
-        if (!requireAuth()) return;
-
-        var pkg = bmOptions.packages.find(function (p) { return p.id == pkgId; });
-        var body = new URLSearchParams();
-        body.append('event_date', date);
-        body.append('event_type', pkg ? pkg.event_type : 'other');
-
-        fetch('/customer/packages/' + pkgId + '/book', {
-            method: 'POST',
-            headers: jsonHeaders(),
-            body: body
-        })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; }); })
-        .then(function (res) {
-            if (handle401(res)) return;
-            if (res.data.success) {
-                bootstrap.Modal.getInstance(modalEl).hide();
-                showToast('Booking requested! #' + res.data.booking_id);
-                setTimeout(function () { window.location.href = '/customer/bookings/' + res.data.booking_id; }, 1200);
-            } else {
-                showToast(res.data.message || 'Booking failed.', 'error');
-            }
-        })
-        .catch(function () {
-            showToast('Could not book this package. Please try again.', 'error');
         });
     }
 
@@ -332,11 +324,254 @@
         });
     }
 
+    /* ---------- Hall custom booking (from hall "Book Now") ---------- */
+    function loadHallUnits() {
+        var section = document.getElementById('bmHallSection');
+        var hallSelect = document.getElementById('bmHallUnit');
+        if (!section || !hallSelect || !bmHallId) { return; }
+        section.style.display = 'block';
+        hallSelect.innerHTML = '<option value="">Loading units...</option>';
+
+        fetch('{{ route("booking.hall-options") }}?hall_id=' + bmHallId, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                bmHallUnitData = data;
+                if (!data.units || !data.units.length) {
+                    hallSelect.innerHTML = '<option value="">No units available</option>';
+                    return;
+                }
+                hallSelect.innerHTML = '<option value="">Select a hall unit</option>' + data.units.map(function (u) {
+                    return '<option value="' + u.id + '">' + u.name + ' (PKR ' + Number(u.base_price).toLocaleString() + ', ' + u.capacity + ' guests)</option>';
+                }).join('');
+            })
+            .catch(function () {
+                hallSelect.innerHTML = '<option value="">Could not load units</option>';
+            });
+    }
+
+    function currentHallUnit() {
+        if (!bmHallUnitData) return null;
+        var hallSelect = document.getElementById('bmHallUnit');
+        if (!hallSelect || !hallSelect.value) return null;
+        var units = bmHallUnitData.units || [];
+        return units.find(function (u) { return u.id == hallSelect.value; }) || null;
+    }
+
+    function cateringOptionsFor(unit) {
+        var labels = {
+            internal: 'In-house catering',
+            external: 'Outside / third-party catering',
+            both: 'Both (in-house or outside)',
+            none: 'No catering (self-arrange)'
+        };
+        var modes = [];
+        if (unit.catering_mode === 'internal' || unit.catering_mode === 'both') modes.push('internal');
+        if (unit.catering_mode === 'external' || unit.catering_mode === 'both') modes.push('external');
+        if (unit.catering_mode === 'none' || unit.catering_mode === 'both') modes.push('none');
+        return modes.length ? modes : ['none'];
+    }
+
+    function populateHallUnit() {
+        var unit = currentHallUnit();
+        var menuWrap = document.getElementById('bmHallMenuWrap');
+        var menuSelect = document.getElementById('bmHallMenu');
+        var extrasWrap = document.getElementById('bmHallExtras');
+        var extrasList = document.getElementById('bmHallExtrasList');
+        var cateringSelect = document.getElementById('bmHallCatering');
+        var guestsInput = document.getElementById('bmHallGuests');
+        var guestsHint = document.getElementById('bmHallGuestsHint');
+        var summary = document.getElementById('bmHallSummary');
+
+        if (!unit) {
+            menuWrap.style.display = 'none';
+            extrasWrap.style.display = 'none';
+            summary.style.display = 'none';
+            cateringSelect.innerHTML = '<option value="">Select catering option</option>';
+            guestsInput.value = '';
+            guestsHint.textContent = '';
+            document.getElementById('bmHallReview').style.display = 'none';
+            return;
+        }
+
+        // Menu sets
+        menuSelect.innerHTML = '<option value="">No menu set</option>' + (unit.menu_sets || []).map(function (s) {
+            return '<option value="' + s.id + '">' + s.name + ' (+PKR ' + Number(s.price).toLocaleString() + ')</option>';
+        }).join('');
+        menuWrap.style.display = (unit.menu_sets && unit.menu_sets.length) ? 'block' : 'none';
+
+        // Extras as toggleable pill cards
+        extrasWrap.style.display = (unit.extras && unit.extras.length) ? 'block' : 'none';
+        extrasList.innerHTML = (unit.extras || []).map(function (e) {
+            return '<button type="button" class="bm-extra-pill" data-id="' + e.id + '" data-price="' + e.price + '" data-name="' + e.name.replace(/"/g, '&quot;') + '" style="border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;background:var(--white);cursor:pointer;transition:all .15s ease;">' +
+                '<i class="ti ti-circle" style="color:#c9c2b4;margin-right:4px;font-size:11px;"></i> ' + e.name + ' (+PKR ' + Number(e.price).toLocaleString() + ')</button>';
+        }).join('');
+
+        // Catering options from unit
+        var catOptions = cateringOptionsFor(unit).map(function (m) {
+            return '<option value="' + m + '">' + cateringLabel(m) + '</option>';
+        }).join('');
+        cateringSelect.innerHTML = '<option value="">Select catering option</option>' + catOptions;
+
+        // Guests hint (capacity)
+        guestsHint.textContent = 'Capacity: ' + unit.min_capacity + ' – ' + unit.max_capacity + ' guests';
+
+        // Review hall services
+        var rev = document.getElementById('bmHallReview');
+        var lines = [];
+        if (bmHallUnitData.hall && bmHallUnitData.hall.description) lines.push('<div><strong>Description:</strong> ' + bmHallUnitData.hall.description + '</div>');
+        if (unit.amenities && unit.amenities.length) lines.push('<div><strong>Amenities:</strong> ' + unit.amenities.join(', ') + '</div>');
+        if (unit.catering_mode) lines.push('<div><strong>Catering:</strong> ' + cateringLabel(unit.catering_mode) + '</div>');
+        if (unit.food_service_style) lines.push('<div><strong>Food service:</strong> ' + foodServiceLabel(unit.food_service_style) + '</div>');
+        if (unit.staff_male || unit.staff_female) lines.push('<div><strong>Staff:</strong> ' + unit.staff_male + ' male / ' + unit.staff_female + ' female</div>');
+        if (unit.decor_type) lines.push('<div><strong>Decor:</strong> ' + unit.decor_type.charAt(0).toUpperCase() + unit.decor_type.slice(1) + '</div>');
+        rev.innerHTML = lines.join('');
+
+        updateHallSummary();
+    }
+
+    function cateringLabel(m) {
+        var labels = {
+            internal: 'In-house catering',
+            external: 'Outside / third-party catering',
+            both: 'Both (in-house or outside)',
+            none: 'No catering (self-arrange)'
+        };
+        return labels[m] || m.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function foodServiceLabel(m) {
+        var labels = {
+            static_place: 'Static place / buffet stations',
+            on_table: 'On-table service',
+            both: 'Both on-table and static place'
+        };
+        return labels[m] || m.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function updateHallSummary() {
+        var unit = currentHallUnit();
+        var summary = document.getElementById('bmHallSummary');
+        if (!unit) { summary.style.display = 'none'; return; }
+
+        var menuPrice = 0;
+        var menuName = null;
+        var menuSel = document.getElementById('bmHallMenu');
+        if (menuSel && menuSel.value) {
+            var ms = (unit.menu_sets || []).find(function (s) { return s.id == menuSel.value; });
+            if (ms) { menuPrice = ms.price; menuName = ms.name; }
+        }
+
+        var extrasSel = Array.from(document.querySelectorAll('.bm-extra-pill.selected'));
+        var extrasTotal = extrasSel.reduce(function (s, p) { return s + parseFloat(p.dataset.price); }, 0);
+
+        var grand = (parseFloat(unit.base_price) || 0) + menuPrice + extrasTotal;
+
+        var rows = '';
+        rows += '<div style="display:flex;justify-content:space-between;"><span>Hall unit (' + unit.name + ')</span><strong>PKR ' + Number(unit.base_price).toLocaleString() + '</strong></div>';
+        if (menuName) rows += '<div style="display:flex;justify-content:space-between;"><span>Menu: ' + menuName + '</span><strong>+PKR ' + Number(menuPrice).toLocaleString() + '</strong></div>';
+        if (extrasSel.length) {
+            extrasSel.forEach(function (p) {
+                rows += '<div style="display:flex;justify-content:space-between;"><span>· ' + p.dataset.name + '</span><span>+PKR ' + Number(p.dataset.price).toLocaleString() + '</span></div>';
+            });
+        }
+        rows += '<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:6px;padding-top:6px;font-weight:700;color:var(--charcoal);"><span>Estimated total</span><span>PKR ' + Number(grand).toLocaleString() + '</span></div>';
+
+        summary.innerHTML = rows;
+        summary.style.display = 'block';
+        validateHallGuests();
+    }
+
+    function validateHallGuests() {
+        var unit = currentHallUnit();
+        var guestsInput = document.getElementById('bmHallGuests');
+        var hint = document.getElementById('bmHallGuestsHint');
+        if (!unit) return true;
+        var v = parseInt(guestsInput.value, 10);
+        if (!guestsInput.value || isNaN(v)) {
+            hint.style.color = 'var(--amber)';
+            hint.textContent = 'Capacity: ' + unit.min_capacity + ' – ' + unit.max_capacity + ' guests' + (guestsInput.value ? ' — enter a valid number.' : '');
+            return guestsInput.value ? false : true;
+        }
+        if (v < unit.min_capacity || v > unit.max_capacity) {
+            hint.style.color = 'var(--red)';
+            hint.textContent = 'Please enter ' + unit.min_capacity + ' – ' + unit.max_capacity + ' guests for this unit.';
+            return false;
+        }
+        hint.style.color = 'var(--text-muted)';
+        hint.textContent = 'Capacity: ' + unit.min_capacity + ' – ' + unit.max_capacity + ' guests';
+        return true;
+    }
+
+    function addHallUnitToCart(date) {
+        var hallSelect = document.getElementById('bmHallUnit');
+        var timeSlot = document.getElementById('bmCustomTimeSlot').value;
+        if (!hallSelect || !hallSelect.value) return;
+
+        var body = new URLSearchParams();
+        body.append('type', 'hall_unit');
+        body.append('id', hallSelect.value);
+        body.append('date', date);
+        body.append('time_slot', timeSlot);
+        var guests = document.getElementById('bmHallGuests').value;
+        if (guests) body.append('guests', guests);
+        var catering = document.getElementById('bmHallCatering').value;
+        if (catering) body.append('catering_mode', catering);
+        var menu = document.getElementById('bmHallMenu').value;
+        if (menu) body.append('menu_set_id', menu);
+        Array.from(document.querySelectorAll('.bm-extra-pill.selected')).forEach(function (p) {
+            body.append('extras[' + p.dataset.id + '][id]', p.dataset.id);
+        });
+
+        return fetch('{{ route("customer.cart.add") }}', {
+            method: 'POST',
+            headers: jsonHeaders(),
+            body: body
+        }).then(function (r) { return r.json(); });
+    }
+
+    function hallBookingValid() {
+        var unit = currentHallUnit();
+        if (unit && !validateHallGuests()) return false;
+        if (!document.getElementById('bmAgreeCheck').checked) {
+            showToast('Please accept the booking agreement to continue.', 'warning');
+            return false;
+        }
+        return true;
+    }
+
+    document.getElementById('bmHallUnit')?.addEventListener('change', populateHallUnit);
+    document.getElementById('bmHallMenu')?.addEventListener('change', updateHallSummary);
+    document.getElementById('bmHallGuests')?.addEventListener('input', validateHallGuests);
+    document.getElementById('bmHallCatering')?.addEventListener('change', function () {});
+    document.addEventListener('click', function (e) {
+        if (e.target.classList && e.target.classList.contains('bm-extra-pill')) {
+            e.target.classList.toggle('selected');
+            var icon = e.target.querySelector('.ti');
+            if (icon) {
+                icon.className = e.target.classList.contains('selected') ? 'ti ti-circle-check' : 'ti ti-circle';
+                icon.style.color = e.target.classList.contains('selected') ? 'var(--green)' : '#c9c2b4';
+                e.target.style.borderColor = e.target.classList.contains('selected') ? 'var(--green)' : 'var(--border)';
+                e.target.style.background = e.target.classList.contains('selected') ? '#E6F7ED' : 'var(--white)';
+            }
+            updateHallSummary();
+        }
+    });
+
+    document.getElementById('bmHallReviewBtn')?.addEventListener('click', function () {
+        var rev = document.getElementById('bmHallReview');
+        rev.style.display = rev.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('bmAgreeToggle')?.addEventListener('click', function () {
+        var t = document.getElementById('bmAgreeText');
+        t.style.display = t.style.display === 'none' ? 'block' : 'none';
+    });
+
     function addServiceToCart(id, date) {
         var body = new URLSearchParams();
         body.append('type', 'service_listing');
         body.append('id', id);
         body.append('date', date);
+        body.append('time_slot', document.getElementById('bmCustomTimeSlot').value);
         return fetch('{{ route("customer.cart.add") }}', {
             method: 'POST',
             headers: jsonHeaders(),
@@ -348,19 +583,32 @@
         var date = document.getElementById('bmCustomDate').value;
         if (!date) { showToast('Please choose an event date.', 'warning'); return; }
         if (!requireAuth()) return;
-        var items = selectedServices();
-        if (!items.length) { showToast('Please select at least one service.', 'warning'); return; }
 
-        Promise.all(items.map(function (i) { return addServiceToCart(i.id, date); }))
+        var hallSelected = document.getElementById('bmHallUnit') && document.getElementById('bmHallUnit').value;
+
+        var jobs = [];
+        if (hallSelected) {
+            if (!hallBookingValid()) return;
+            jobs.push(addHallUnitToCart(date));
+        } else if (!document.getElementById('bmAgreeCheck').checked) {
+            showToast('Please accept the booking agreement to continue.', 'warning');
+            return;
+        }
+        jobs = jobs.concat(selectedServices().map(function (i) { return addServiceToCart(i.id, date); }));
+
+        var hasAnything = hallSelected || selectedServices().length > 0;
+        if (!hasAnything) { showToast('Please select at least one service or hall unit.', 'warning'); return; }
+
+        Promise.all(jobs)
             .then(function (results) {
-                if (results.some(function (r) { return r.success; })) {
+                if (results.some(function (r) { return r && r.success; })) {
                     showToast('Added to cart!');
                 } else {
-                    showToast('Could not add services to cart.', 'error');
+                    showToast('Could not add items to cart.', 'error');
                 }
             })
             .catch(function () {
-                showToast('Could not add services to cart. Please try again.', 'error');
+                showToast('Could not add items to cart. Please try again.', 'error');
             });
     }
 
@@ -368,19 +616,31 @@
         var date = document.getElementById('bmCustomDate').value;
         if (!date) { showToast('Please choose an event date.', 'warning'); return; }
         if (!requireAuth()) return;
-        var items = selectedServices();
-        if (!items.length) { showToast('Please select at least one service.', 'warning'); return; }
 
-        Promise.all(items.map(function (i) { return addServiceToCart(i.id, date); }))
+        var hallSelected = document.getElementById('bmHallUnit') && document.getElementById('bmHallUnit').value;
+        var jobs = [];
+        if (hallSelected) {
+            if (!hallBookingValid()) return;
+            jobs.push(addHallUnitToCart(date));
+        } else if (!document.getElementById('bmAgreeCheck').checked) {
+            showToast('Please accept the booking agreement to continue.', 'warning');
+            return;
+        }
+        jobs = jobs.concat(selectedServices().map(function (i) { return addServiceToCart(i.id, date); }));
+
+        var hasAnything = hallSelected || selectedServices().length > 0;
+        if (!hasAnything) { showToast('Please select at least one service or hall unit.', 'warning'); return; }
+
+        Promise.all(jobs)
             .then(function (results) {
-                if (results.some(function (r) { return r.success; })) {
+                if (results.some(function (r) { return r && r.success; })) {
                     window.location.href = '{{ route("customer.checkout") }}';
                 } else {
-                    showToast('Could not add services to cart.', 'error');
+                    showToast('Could not add items to cart.', 'error');
                 }
             })
             .catch(function () {
-                showToast('Could not add services to cart. Please try again.', 'error');
+                showToast('Could not add items to cart. Please try again.', 'error');
             });
     }
 
@@ -390,6 +650,8 @@
         var guests = document.getElementById('bmBudgetGuests').value;
         var eventType = document.getElementById('bmBudgetEventType').value;
         var city = document.getElementById('bmBudgetCity').value;
+        var timeSlot = document.getElementById('bmBudgetTimeSlot').value;
+        var date = document.getElementById('bmBudgetDate').value;
 
         if (!budget || !guests) { showToast('Please enter budget and guests.', 'warning'); return; }
 
@@ -398,6 +660,8 @@
         body.append('guest_count', guests);
         if (eventType) body.append('event_type', eventType);
         if (city) body.append('city', city);
+        if (timeSlot) body.append('time_slot', timeSlot);
+        if (date) body.append('date', date);
 
         var resultBox = document.getElementById('bmBudgetResult');
         resultBox.innerHTML = '<div class="bm-loading">Finding the best bundle...</div>';
@@ -468,9 +732,9 @@
     }
 
     function addBundle(b) {
-        var date = document.getElementById('bmCustomDate').value || document.getElementById('bmPackageDate').value;
+        var date = document.getElementById('bmCustomDate').value;
         if (!date) {
-            showToast('Please choose an event date on the Package or Custom tab first.', 'warning');
+            showToast('Please choose an event date on the Custom tab first.', 'warning');
             return;
         }
         if (!requireAuth()) return;
@@ -479,8 +743,12 @@
         if (b.hall_unit) items.push({ type: 'hall_unit', id: b.hall_unit.id });
         (b.services || []).forEach(function (s) { items.push({ type: 'service_listing', id: s.id }); });
 
+        var timeSlot = document.getElementById('bmBudgetTimeSlot').value
+            || document.getElementById('bmCustomTimeSlot').value;
+
         var body = new URLSearchParams();
         body.append('date', date);
+        if (timeSlot) body.append('time_slot', timeSlot);
         items.forEach(function (it, i) {
             body.append('items[' + i + '][type]', it.type);
             body.append('items[' + i + '][id]', it.id);
@@ -514,8 +782,24 @@
         var mode = trigger ? (trigger.dataset.bookingMode || null) : null;
         bmSelected = {};
         showStep(mode || 'base');
+
+        // Pre-fill date / time slot when the trigger carries them (e.g. hall detail from search)
+        var bookingDate = trigger ? (trigger.dataset.bookingDate || null) : null;
+        var bookingSlot = trigger ? (trigger.dataset.bookingTimeSlot || null) : null;
+        if (bookingDate) {
+            var custDate = document.getElementById('bmCustomDate');
+            if (custDate) custDate.value = bookingDate;
+        }
+        if (bookingSlot) {
+            var custSlot = document.getElementById('bmCustomTimeSlot');
+            if (custSlot) custSlot.value = bookingSlot;
+        }
+
         if (mode) {
             loadOptions();
+            if (mode === 'custom' && bmHallId) {
+                loadHallUnits();
+            }
             if (mode === 'budget') {
                 document.getElementById('bmBudgetResult').innerHTML = '';
             }
@@ -533,11 +817,6 @@
         btn.addEventListener('click', function () { showStep('base'); });
     });
 
-    document.getElementById('bmPackageList').addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-book-package]');
-        if (btn) bookPackage(btn.dataset.bookPackage);
-    });
-
     document.getElementById('bmCustomAddCart').addEventListener('click', customAdd);
     document.getElementById('bmCustomQuote').addEventListener('click', customQuote);
 
@@ -547,8 +826,8 @@
         return d.toISOString().split('T')[0];
     }
     var min = tomorrowIso();
-    document.getElementById('bmPackageDate').min = min;
     document.getElementById('bmCustomDate').min = min;
+    document.getElementById('bmBudgetDate').min = min;
 })();
 </script>
 @endpush

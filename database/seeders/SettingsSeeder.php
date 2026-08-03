@@ -38,7 +38,6 @@ class SettingsSeeder extends Seeder
 
             // Business rules
             ['currency_symbol', 'PKR', 'text', 'Currency Symbol', 'business', 'Currency shown on prices.'],
-            ['default_commission_rate', '10', 'number', 'Default Commission %', 'business', 'Default platform commission percentage on bookings.'],
             ['advance_deposit_percent', '30', 'number', 'Advance Deposit %', 'business', 'Advance deposit percentage expected on booking confirmation.'],
             ['booking_hold_hours', '24', 'number', 'Booking Hold Hours', 'business', 'How long a hall slot stays held before being released.'],
             ['refund_cutoff_hours', '72', 'number', 'Refund Cutoff Hours', 'business', 'Hours before the event after which cancellations do not refund the advance.'],

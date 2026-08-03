@@ -8,6 +8,7 @@ use App\Models\CorporateLead;
 use App\Models\Dispute;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\VendorPackagePurchase;
 use App\Models\VendorProfile;
 
 class DashboardController extends Controller
@@ -20,13 +21,16 @@ class DashboardController extends Controller
             'totalVendors' => User::where('role', 'vendor')->count(),
             'pendingVendors' => VendorProfile::where('status', 'pending')->count(),
             'verifiedVendors' => VendorProfile::where('status', 'verified')->count(),
+            'blockedVendors' => VendorProfile::where('status', 'blocked')->count(),
             'totalBookings' => Booking::count(),
             'requestedBookings' => Booking::where('status', 'requested')->count(),
             'confirmedBookings' => Booking::where('status', 'confirmed')->count(),
             'completedBookings' => Booking::where('status', 'completed')->count(),
             'cancelledBookings' => Booking::where('status', 'cancelled')->count(),
             'totalRevenue' => Payment::where('status', 'received')->sum('amount'),
-            'totalCommission' => Booking::sum('commission_amount'),
+            'packageRevenue' => VendorPackagePurchase::whereIn('status', ['active', 'expired'])->sum('amount'),
+            'activePackages' => VendorPackagePurchase::where('status', 'active')->count(),
+            'pendingPackagePayments' => VendorPackagePurchase::where('status', 'pending')->count(),
             'openDisputes' => Dispute::where('status', 'open')->count(),
             'newLeads' => CorporateLead::where('status', 'new')->count(),
         ];

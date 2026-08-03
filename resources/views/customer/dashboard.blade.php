@@ -1,13 +1,42 @@
-@extends('layouts.app')
+@extends('customer.layouts.master')
 
 @section('title', 'Customer Dashboard')
 
+@push('styles')
+<style>
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 8px 0 24px;
+}
+.dash-header h2 {
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--charcoal);
+    margin: 0;
+}
+.dash-header h2 span { color: var(--gold); }
+.dash-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Welcome, {{ auth()->user()->name }}!</h2>
+<div>
+    <div class="dash-header">
+        <div>
+            <h2>My <span>Dashboard</span></h2>
+            <p class="dash-sub">Welcome back, {{ auth()->user()->name }}! Manage your bookings, inquiries and more from here.</p>
         </div>
+        <a href="{{ route('browse.index') }}" class="btn-outline-gold" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:9px 20px;">
+            <i class="ti ti-building-arch"></i> Browse Venues
+        </a>
     </div>
 
     <div class="row mb-4 g-3">
@@ -71,6 +100,7 @@
                             <tr>
                                 <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">ID</th>
                                 <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Event Date</th>
+                                <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Time</th>
                                 <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Type</th>
                                 <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Status</th>
                                 <th style="padding:12px 20px;font-size:11px;text-transform:uppercase;color:var(--text-muted);">Total</th>
@@ -79,8 +109,9 @@
                         <tbody>
                             @foreach($bookings as $booking)
                                 <tr style="cursor:pointer;" onclick="window.location.href='{{ route('customer.bookings.show', $booking) }}'">
-                                    <td style="padding:12px 20px;font-size:13px;"><a href="{{ route('customer.bookings.show', $booking) }}" style="color:var(--gold-dark);font-weight:600;text-decoration:none;">#{{ $booking->id }}</a></td>
+                                    <td style="padding:12px 20px;font-size:13px;"><a href="{{ route('customer.bookings.show', $booking) }}" style="color:var(--gold-dark);font-weight:600;text-decoration:none;">{{ $booking->reference }}</a></td>
                                     <td style="padding:12px 20px;font-size:13px;">{{ $booking->event_date->format('M d, Y') }}</td>
+                                    <td style="padding:12px 20px;font-size:13px;">{{ $booking->time_slot ? ucfirst($booking->time_slot) : '—' }}</td>
                                     <td style="padding:12px 20px;font-size:13px;">{{ ucfirst($booking->event_type) }}</td>
                                     <td style="padding:12px 20px;">
                                         <span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;background:{{ $booking->status == 'confirmed' ? '#E6F7ED' : ($booking->status == 'cancelled' ? '#FDE8E8' : '#FFF3E0') }};color:{{ $booking->status == 'confirmed' ? 'var(--green)' : ($booking->status == 'cancelled' ? 'var(--red)' : 'var(--amber)') }};">

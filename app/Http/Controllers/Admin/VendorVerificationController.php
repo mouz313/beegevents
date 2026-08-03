@@ -25,6 +25,10 @@ class VendorVerificationController extends Controller
     {
         $query = VendorProfile::with('user');
 
+        if ($request->get('kyc') === 'incomplete') {
+            $query->incompleteKyc();
+        }
+
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('business_name', 'like', "%{$search}%")
@@ -62,7 +66,7 @@ class VendorVerificationController extends Controller
             'city' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
-            'status' => 'required|in:pending,verified,suspended',
+            'status' => 'required|in:pending,verified,suspended,blocked',
             'cancellation_policy' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ], VendorSpecService::rulesFor($request->vendor_type)));
@@ -90,13 +94,33 @@ class VendorVerificationController extends Controller
 
     public function verify(VendorProfile $vendorProfile)
     {
-        $vendorProfile->update(['status' => 'verified']);
+        if (!$vendorProfile->kycComplete()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot verify — vendor KYC is incomplete: ' . implode(', ', $vendorProfile->kycMissing()) . '.',
+            ], 422);
+        }
+
+        $vendorProfile->update([
+            'status' => 'verified',
+            'trial_ends_at' => $vendorProfile->trial_ends_at ?? now()->addDays(3),
+        ]);
         return response()->json(['success' => true]);
     }
 
     public function suspend(VendorProfile $vendorProfile)
     {
         $vendorProfile->update(['status' => 'suspended']);
+        return response()->json(['success' => true]);
+    }
+
+    public function unblock(VendorProfile $vendorProfile)
+    {
+        $vendorProfile->update([
+            'status' => 'verified',
+            'trial_ends_at' => now()->addDays(3),
+        ]);
+
         return response()->json(['success' => true]);
     }
 

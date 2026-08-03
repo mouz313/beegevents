@@ -27,13 +27,17 @@ class PackageController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'total_price' => 'required|numeric|min:0',
-            'event_type' => 'required|in:wedding,engagement,corporate,birthday,home,other',
+            'duration_days' => 'required|integer|min:1',
+            'boost_tier' => 'nullable|in:featured,premium',
+            'max_halls' => 'nullable|integer|min:0',
+            'max_listings' => 'nullable|integer|min:0',
+            'is_active' => 'sometimes|boolean',
             'items' => 'nullable|array',
             'items.*.type' => 'required|in:hall_unit,service_listing',
             'items.*.id' => 'required|integer',
         ]);
 
-        $package = Package::create($request->only('title', 'description', 'total_price', 'event_type'));
+        $package = Package::create($request->only('title', 'description', 'total_price', 'duration_days', 'boost_tier', 'max_halls', 'max_listings', 'is_active'));
 
         if ($request->has('items')) {
             foreach ($request->items as $item) {
@@ -71,13 +75,17 @@ class PackageController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'total_price' => 'required|numeric|min:0',
-            'event_type' => 'required|in:wedding,engagement,corporate,birthday,home,other',
+            'duration_days' => 'required|integer|min:1',
+            'boost_tier' => 'nullable|in:featured,premium',
+            'max_halls' => 'nullable|integer|min:0',
+            'max_listings' => 'nullable|integer|min:0',
+            'is_active' => 'sometimes|boolean',
             'items' => 'nullable|array',
             'items.*.type' => 'required|in:hall_unit,service_listing',
             'items.*.id' => 'required|integer',
         ]);
 
-        $package->update($request->only('title', 'description', 'total_price', 'event_type'));
+        $package->update($request->only('title', 'description', 'total_price', 'duration_days', 'boost_tier', 'max_halls', 'max_listings', 'is_active'));
 
         $package->packageItems()->delete();
         if ($request->has('items')) {

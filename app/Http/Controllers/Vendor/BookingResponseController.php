@@ -22,7 +22,7 @@ class BookingResponseController extends Controller
         }
 
         $items = BookingItem::where('vendor_profile_id', $profile->id)
-            ->with('booking.customer')
+            ->with('booking.customer', 'itemable', 'menuSet')
             ->latest()
             ->paginate(20);
 
@@ -105,7 +105,7 @@ class BookingResponseController extends Controller
             $verb = $status === 'accepted' ? 'accepted' : 'declined';
             Mail::to($booking->customer->email)->send(new BookingStatusMail(
                 $booking,
-                'Vendor '.$verb.' your request #'.$booking->id,
+                'Vendor '.$verb.' your request '.$booking->reference,
                 'Hi '.$booking->customer->name.',',
                 'A vendor has '.$verb.' your booking request. Check your booking for the latest status.',
                 route('customer.bookings.show', $booking)

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('customer.layouts.master')
 
 @section('title', 'My Bookings')
 
@@ -13,8 +13,9 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>Reference</th>
                                 <th>Event Date</th>
+                                <th>Time</th>
                                 <th>Type</th>
                                 <th>Status</th>
                                 <th>Total</th>
@@ -24,8 +25,9 @@
                         <tbody>
                             @foreach($bookings as $booking)
                                 <tr>
-                                    <td>#{{ $booking->id }}</td>
+                                    <td>{{ $booking->reference }}</td>
                                     <td>{{ \Carbon\Carbon::parse($booking->event_date)->format('M d, Y') }}</td>
+                                    <td>{{ $booking->time_slot ? ucfirst($booking->time_slot) : '—' }}</td>
                                     <td>{{ ucfirst($booking->event_type) }}</td>
                                     <td>
                                         <span class="badge bg-{{ $booking->status == 'confirmed' ? 'success' : ($booking->status == 'cancelled' ? 'danger' : ($booking->status == 'completed' ? 'info' : 'warning')) }}">

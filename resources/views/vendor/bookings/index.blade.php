@@ -9,6 +9,9 @@
             <h2 class="vendor-page-title">Booking Requests</h2>
             <div class="vendor-page-sub">Accept or decline customer booking requests.</div>
         </div>
+        <a href="{{ route('vendor.calendar') }}" class="btn btn-sm btn-gold" style="padding:8px 16px;font-size:12px;">
+            <i class="ti ti-plus"></i> Add Manual Booking
+        </a>
     </div>
 
     <div class="profile-card">
@@ -34,10 +37,39 @@
                         <tbody>
                             @foreach($items as $item)
                                 <tr id="booking-item-{{ $item->id }}">
-                                    <td>#{{ $item->booking_id }}</td>
-                                    <td>{{ $item->booking->customer->name ?? 'N/A' }}</td>
-                                    <td>{{ str_replace('_', ' ', class_basename($item->itemable_type)) }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($item->booking->event_date)->format('M d, Y') }}</td>
+                                    <td>
+                                        {{ $item->booking->reference }}
+                                        @if($item->booking->booking_type === 'manual')
+                                            <span class="badge bg-secondary" style="font-size:9px;vertical-align:middle;">Manual</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $item->booking->customer->name ?? ($item->booking->booking_type === 'manual' ? 'Manual / Offline' : 'N/A') }}</td>
+                                    <td>
+                                        {{ str_replace('_', ' ', class_basename($item->itemable_type)) }}
+                                        @if($item->itemable)
+                                            <div style="font-size:11px;color:var(--text-muted);">{{ $item->itemable->unit_name ?? $item->itemable->title ?? '' }}</div>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ \Carbon\Carbon::parse($item->booking->event_date)->format('M d, Y') }}
+                                        @if($item->time_slot)
+                                            <div style="font-size:11px;color:var(--gold-dark);font-weight:600;">{{ ucfirst($item->time_slot) }}</div>
+                                        @endif
+                                        @if($item->menuSet)
+                                            <div style="font-size:11px;color:var(--text-muted);">Menu: {{ $item->menuSet->name }}</div>
+                                        @endif
+                                        @if($item->guests)
+                                            <div style="font-size:11px;color:var(--text-muted);">Guests: {{ number_format($item->guests) }}</div>
+                                        @endif
+                                        @if($item->catering_mode)
+                                            <div style="font-size:11px;color:var(--text-muted);">Catering: {{ ['internal' => 'In-house', 'external' => 'Outside / third-party', 'none' => 'Self-arrange'][$item->catering_mode] ?? ucfirst($item->catering_mode) }}</div>
+                                        @endif
+                                        @if(!empty($item->extras))
+                                            <div style="font-size:11px;color:var(--text-muted);">
+                                                Extras: {{ collect($item->extras)->pluck('name')->implode(', ') }}
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td>PKR {{ number_format($item->price) }}</td>
                                     <td>
                                         <span class="badge bg-{{ $item->vendor_status == 'accepted' ? 'success' : ($item->vendor_status == 'declined' ? 'danger' : 'warning') }}">
@@ -60,6 +92,15 @@
                                         <a href="{{ route('vendor.bookings.invoice', $item->booking_id) }}" target="_blank" class="btn btn-sm btn-outline-gold mt-1" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;">
                                             <i class="ti ti-file-invoice"></i> Invoice
                                         </a>
+                                        @if($item->booking->booking_type === 'manual' && in_array($item->booking->status, ['verified', 'confirmed']))
+                                            <form method="POST" action="{{ route('vendor.manual-bookings.destroy', $item->booking_id) }}" onsubmit="return confirm('Cancel this manual booking and release the slot?')" class="mt-1" style="display:inline-block;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger" style="padding:4px 10px;font-size:11px;">
+                                                    <i class="ti ti-x"></i> Cancel
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

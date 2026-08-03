@@ -643,6 +643,11 @@ body {
 .status-cancelled::before,
 .status-declined::before { background: var(--red); }
 
+.status-suspended,
+.status-blocked { background: rgba(192,57,43,0.12); color: var(--red); }
+.status-suspended::before,
+.status-blocked::before { background: var(--red); }
+
 .status-completed { background: rgba(74,101,114,0.12); color: var(--blue-grey); }
 .status-completed::before { background: var(--blue-grey); }
 

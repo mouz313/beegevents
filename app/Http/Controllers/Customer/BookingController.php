@@ -7,7 +7,7 @@ use App\Mail\BookingStatusMail;
 use App\Models\AvailabilitySlot;
 use App\Models\Booking;
 use App\Models\BookingItem;
-use App\Models\Package;
+use App\Models\VendorCombo;
 use App\Services\CancellationService;
 use App\Services\NotificationService;
 use App\Services\BookingPdfService;
@@ -45,15 +45,16 @@ class BookingController extends Controller
             'event_date' => 'required|date|after:today',
             'event_type' => 'required|in:wedding,engagement,corporate,birthday,home,other',
             'notes' => 'nullable|string|max:1000',
+            'agreement_accepted' => 'required|accepted',
         ]);
 
-        $totalPrice = collect($cart)->sum('price');
+        $totalPrice = collect($cart)->sum(function ($item) {
+            return ($item['price'] ?? 0) + ($item['extras_total'] ?? 0) + ($item['menu_set_price'] ?? 0);
+        });
         $bookingType = count($cart) > 1 ? 'multi' : 'single';
-        $commissionRate = config("commission.types.$bookingType", config('commission.default_rate', 10));
-        $commissionAmount = round($totalPrice * ($commissionRate / 100), 2);
 
         try {
-            $booking = DB::transaction(function () use ($cart, $validated, $totalPrice, $bookingType, $commissionAmount) {
+            $booking = DB::transaction(function () use ($cart, $validated, $totalPrice, $bookingType) {
                 foreach ($cart as $item) {
                     if ($item['type'] !== 'hall_unit') {
                         continue;
@@ -61,7 +62,10 @@ class BookingController extends Controller
 
                     $conflict = AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
                         ->where('resource_id', $item['id'])
-                        ->where('date', $validated['event_date'])
+                        ->where('date', $item['date'])
+                        ->where(function ($q) use ($item) {
+                            $q->where('slot_type', $item['time_slot'] ?? 'noon')->orWhereNull('slot_type');
+                        })
                         ->lockForUpdate()
                         ->where(function ($q) {
                             $q->whereIn('status', ['booked', 'blocked_offline'])
@@ -77,19 +81,24 @@ class BookingController extends Controller
 
                     if ($conflict) {
                         throw new \RuntimeException(
-                            $item['name'].' is not available on '.$validated['event_date'].'.'
+                            $item['name'].' is not available for '.ucfirst($item['time_slot'] ?? 'noon').' on '.\Carbon\Carbon::parse($item['date'])->format('d M Y').'.'
                         );
                     }
                 }
 
+                // Booking date derived from the first hall-unit cart item (fall back to validated input)
+                $eventDate = collect($cart)->firstWhere('type', 'hall_unit')['date'] ?? $validated['event_date'];
+                $firstHallSlot = collect($cart)->firstWhere('type', 'hall_unit')['time_slot'] ?? null;
+
                 $booking = Booking::create([
                     'customer_id' => auth()->id(),
                     'booking_type' => $bookingType,
-                    'event_date' => $validated['event_date'],
+                    'event_date' => $eventDate,
+                    'time_slot' => $firstHallSlot,
                     'event_type' => $validated['event_type'],
                     'total_price' => $totalPrice,
-                    'commission_amount' => $commissionAmount,
                     'notes' => $validated['notes'] ?? null,
+                    'agreement_accepted_at' => now(),
                 ]);
 
                 $heldUntil = now()->addHours(24);
@@ -102,14 +111,20 @@ class BookingController extends Controller
                         'itemable_type' => $itemableType,
                         'itemable_id' => $item['id'],
                         'vendor_profile_id' => $item['vendor_id'],
-                        'price' => $item['price'],
+                        'price' => ($item['price'] ?? 0) + ($item['extras_total'] ?? 0) + ($item['menu_set_price'] ?? 0),
+                        'time_slot' => $item['time_slot'] ?? null,
+                        'extras' => $item['extras'] ?? [],
+                        'menu_set_id' => $item['menu_set_id'] ?? null,
+                        'guests' => $item['guests'] ?? null,
+                        'catering_mode' => $item['catering_mode'] ?? null,
                     ]);
 
                     if ($item['type'] === 'hall_unit') {
                         AvailabilitySlot::create([
                             'resource_type' => 'App\Models\HallUnit',
                             'resource_id' => $item['id'],
-                            'date' => $validated['event_date'],
+                            'date' => $item['date'],
+                            'slot_type' => $item['time_slot'] ?? 'noon',
                             'status' => 'held',
                             'booking_id' => $booking->id,
                             'held_until' => $heldUntil,
@@ -138,28 +153,65 @@ class BookingController extends Controller
         return redirect()->route('customer.bookings.show', $booking)->with('success', 'Booking created!');
     }
 
-    public function bookPackage(Request $request, Package $package)
+    public function comboShow(VendorCombo $combo)
     {
+        $combo->load('package', 'vendorProfile.user', 'items.itemable');
+
+        $vendor = $combo->vendorProfile;
+
+        if (! $combo->is_active
+            || ! $combo->isFullyFilled()
+            || ! $vendor
+            || ! $vendor->visibleOnSite()
+            || ($combo->packagePurchase && $combo->packagePurchase->status !== 'active')) {
+            abort(404);
+        }
+
+        return view('browse.combo-book', compact('combo', 'vendor'));
+    }
+
+    public function bookCombo(Request $request, VendorCombo $combo)
+    {
+        $combo->load('package', 'items.itemable');
+
         $validated = $request->validate([
             'event_date' => 'required|date|after:today',
             'event_type' => 'required|in:wedding,engagement,corporate,birthday,home,other',
+            'time_slot' => 'nullable|in:noon,evening',
             'notes' => 'nullable|string|max:1000',
+            'agreement_accepted' => 'required|accepted',
         ]);
 
-        $commissionRate = config('commission.types.package', config('commission.default_rate', 10));
-        $commissionAmount = round($package->total_price * ($commissionRate / 100), 2);
+        $vendor = $combo->vendorProfile;
+
+        if (! $combo->is_active
+            || ! $combo->isFullyFilled()
+            || ! $vendor
+            || ! $vendor->visibleOnSite()
+            || ($combo->packagePurchase && $combo->packagePurchase->status !== 'active')) {
+            return redirect()->back()->with('error', 'This combo is no longer available.');
+        }
+
+        $timeSlot = $validated['time_slot'] ?? 'noon';
 
         try {
-            $booking = DB::transaction(function () use ($package, $validated, $commissionAmount) {
-                foreach ($package->packageItems as $packageItem) {
-                    $itemable = $packageItem->itemable;
-                    if (! $itemable || $packageItem->itemable_type !== 'App\Models\HallUnit') {
+            $booking = DB::transaction(function () use ($combo, $validated, $timeSlot) {
+                foreach ($combo->items as $comboItem) {
+                    if ($comboItem->itemable_type !== 'App\Models\HallUnit') {
+                        continue;
+                    }
+
+                    $itemable = $comboItem->itemable;
+                    if (! $itemable) {
                         continue;
                     }
 
                     $conflict = AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
                         ->where('resource_id', $itemable->id)
                         ->where('date', $validated['event_date'])
+                        ->where(function ($q) use ($timeSlot) {
+                            $q->where('slot_type', $timeSlot)->orWhereNull('slot_type');
+                        })
                         ->lockForUpdate()
                         ->where(function ($q) {
                             $q->whereIn('status', ['booked', 'blocked_offline'])
@@ -175,42 +227,47 @@ class BookingController extends Controller
 
                     if ($conflict) {
                         throw new \RuntimeException(
-                            $itemable->unit_name.' is not available on '.$validated['event_date'].'.'
+                            ($itemable->unit_name ?? 'Hall unit').' is not available for '.ucfirst($timeSlot).' on '.\Carbon\Carbon::parse($validated['event_date'])->format('d M Y').'.'
                         );
                     }
                 }
 
                 $booking = Booking::create([
                     'customer_id' => auth()->id(),
-                    'booking_type' => 'package',
+                    'booking_type' => 'multi',
                     'event_date' => $validated['event_date'],
+                    'time_slot' => $timeSlot,
                     'event_type' => $validated['event_type'],
-                    'total_price' => $package->total_price,
-                    'commission_amount' => $commissionAmount,
-                    'notes' => ($validated['notes'] ?? null) ?: 'Package: '.$package->title,
+                    'total_price' => $combo->total_price,
+                    'notes' => ($validated['notes'] ?? null) ?: 'Combo: '.($combo->package->title ?? 'Combo'),
+                    'agreement_accepted_at' => now(),
                 ]);
 
                 $heldUntil = now()->addHours(24);
 
-                foreach ($package->packageItems as $packageItem) {
-                    $itemable = $packageItem->itemable;
+                foreach ($combo->items as $comboItem) {
+                    $itemable = $comboItem->itemable;
                     if (! $itemable) {
                         continue;
                     }
 
                     BookingItem::create([
                         'booking_id' => $booking->id,
-                        'itemable_type' => $packageItem->itemable_type,
-                        'itemable_id' => $packageItem->itemable_id,
-                        'vendor_profile_id' => $itemable->vendor_profile_id ?? $itemable->hall?->vendor_profile_id,
+                        'itemable_type' => $comboItem->itemable_type,
+                        'itemable_id' => $comboItem->itemable_id,
+                        'vendor_profile_id' => $comboItem->itemable_type === 'App\Models\HallUnit'
+                            ? $itemable->hall?->vendor_profile_id
+                            : $itemable->vendor_profile_id,
                         'price' => $itemable->price ?? $itemable->base_price ?? 0,
+                        'time_slot' => $comboItem->itemable_type === 'App\Models\HallUnit' ? $timeSlot : null,
                     ]);
 
-                    if ($packageItem->itemable_type === 'App\Models\HallUnit') {
+                    if ($comboItem->itemable_type === 'App\Models\HallUnit') {
                         AvailabilitySlot::create([
                             'resource_type' => 'App\Models\HallUnit',
                             'resource_id' => $itemable->id,
                             'date' => $validated['event_date'],
+                            'slot_type' => $timeSlot,
                             'status' => 'held',
                             'booking_id' => $booking->id,
                             'held_until' => $heldUntil,
@@ -221,20 +278,12 @@ class BookingController extends Controller
                 return $booking;
             });
         } catch (\RuntimeException $e) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 409);
-            }
-
             return redirect()->back()->withErrors(['event_date' => $e->getMessage()])->withInput();
         }
 
         $this->sendBookingNotifications($booking);
 
-        if ($request->ajax()) {
-            return response()->json(['success' => true, 'booking_id' => $booking->id]);
-        }
-
-        return redirect()->route('customer.bookings.show', $booking)->with('success', 'Package booked!');
+        return redirect()->route('customer.bookings.show', $booking)->with('success', 'Combo booked!');
     }
 
     protected function sendBookingNotifications(Booking $booking): void
@@ -242,7 +291,7 @@ class BookingController extends Controller
         try {
             Mail::to($booking->customer->email)->send(new BookingStatusMail(
                 $booking,
-                'Booking Request Received #'.$booking->id,
+                'Booking Request Received '.$booking->reference,
                 'Hi '.$booking->customer->name.',',
                 'We have received your booking request for '.$booking->event_date->format('d M Y').'. You will be notified once vendors respond.',
                 route('customer.bookings.show', $booking)
@@ -259,7 +308,7 @@ class BookingController extends Controller
             try {
                 Mail::to($vendorProfile->user->email)->send(new BookingStatusMail(
                     $booking,
-                    'New Booking Request #'.$booking->id,
+                    'New Booking Request '.$booking->reference,
                     'Hi '.$vendorProfile->user->name.',',
                     'You received a new booking request for '.$booking->event_date->format('d M Y').'. Please accept or decline it.',
                     route('vendor.bookings.index')
@@ -280,22 +329,19 @@ class BookingController extends Controller
             return $this->offerResponse($request, 'No pending price offer.', 422);
         }
 
-        $commissionRate = config('commission.types.'.$booking->booking_type, config('commission.default_rate', 10));
-
         $booking->update([
             'negotiated_price' => $booking->price_offer,
             'price_offer' => null,
             'price_offer_status' => 'accepted',
             'price_offer_note' => null,
             'price_offer_sent_at' => now(),
-            'commission_amount' => round($booking->price_offer * ($commissionRate / 100), 2),
         ]);
 
         app(NotificationService::class)->notifyParticipants(
             $booking,
             auth()->id(),
             'Price offer accepted',
-            'Customer accepted the new price of PKR '.number_format($booking->price()).' for booking #'.$booking->id.'.'
+            'Customer accepted the new price of PKR '.number_format($booking->price()).' for booking '.$booking->reference.'.'
         );
 
         if ($request->ajax()) {
@@ -321,7 +367,7 @@ class BookingController extends Controller
             $booking,
             auth()->id(),
             'Price offer declined',
-            'Customer declined the price offer for booking #'.$booking->id.'.'
+            'Customer declined the price offer for booking '.$booking->reference.'.'
         );
 
         if ($request->ajax()) {
@@ -360,7 +406,7 @@ class BookingController extends Controller
 
     public function show(Booking $booking)
     {
-        $booking->load('bookingItems');        $refundInfo = null;
+        $booking->load('bookingItems.itemable', 'bookingItems.menuSet');        $refundInfo = null;
         if (in_array($booking->status, ['requested', 'discussing', 'verified', 'confirmed'])) {
             $refundInfo = $this->cancellationService->calculateRefund($booking);
         }
@@ -396,7 +442,7 @@ class BookingController extends Controller
                 $booking,
                 'Booking Cancelled',
                 'Hi '.$booking->customer->name.',',
-                'Your booking #'.$booking->id.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.',
+                'Your booking '.$booking->reference.' has been cancelled. Refund: PKR '.number_format($refundInfo['refund_amount']).'.',
                 route('customer.bookings.show', $booking)
             ));
         } catch (\Exception $e) {

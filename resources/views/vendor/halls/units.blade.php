@@ -29,7 +29,10 @@
                             <th>Floor</th>
                             <th>Capacity</th>
                             <th>Base Price</th>
-                            <th>Decor</th>
+                            <th>Catering</th>
+                            <th>Food Service</th>
+                            <th>Staff (M/F)</th>
+                            <th>Amenities</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -40,10 +43,19 @@
                         <td>{{ $unit->floor->floor_label ?? 'N/A' }}</td>
                         <td>{{ $unit->min_capacity }} - {{ $unit->max_capacity }}</td>
                         <td>PKR {{ number_format($unit->base_price) }}</td>
-                        <td>{{ ucfirst($unit->decor_type) }}</td>
+                        <td>{{ $unit->catering_mode ? ucwords(str_replace('_', ' ', $unit->catering_mode)) : '—' }}</td>
+                        <td>{{ $unit->food_service_style ? ucwords(str_replace('_', ' ', $unit->food_service_style)) : '—' }}</td>
+                        <td>{{ $unit->staff_male }} / {{ $unit->staff_female }}</td>
+                        <td style="max-width:200px;">
+                            @if(!empty($unit->amenities))
+                                <span style="font-size:11px;color:var(--text-muted);">{{ implode(', ', $unit->amenities) }}</span>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-outline-gold" onclick="showExtras({{ $unit->id }})"><i class="ti ti-package"></i> Extras</button>
-                            <button class="btn btn-sm btn-outline-gold edit-unit" data-id="{{ $unit->id }}" data-unit_name="{{ $unit->unit_name }}" data-floor_id="{{ $unit->floor_id }}" data-min_capacity="{{ $unit->min_capacity }}" data-max_capacity="{{ $unit->max_capacity }}" data-menu_summary="{{ $unit->menu_summary }}" data-decor_type="{{ $unit->decor_type }}" data-base_price="{{ $unit->base_price }}">Edit</button>
+                            <button class="btn btn-sm btn-outline-gold edit-unit" data-id="{{ $unit->id }}" data-unit_name="{{ $unit->unit_name }}" data-floor_id="{{ $unit->floor_id }}" data-min_capacity="{{ $unit->min_capacity }}" data-max_capacity="{{ $unit->max_capacity }}" data-menu_summary="{{ $unit->menu_summary }}" data-decor_type="{{ $unit->decor_type }}" data-base_price="{{ $unit->base_price }}" data-catering_mode="{{ $unit->catering_mode }}" data-food_service_style="{{ $unit->food_service_style }}" data-staff_male="{{ $unit->staff_male }}" data-staff_female="{{ $unit->staff_female }}" data-amenities="{{ json_encode($unit->amenities ?? []) }}">Edit</button>
                             <button class="btn btn-sm btn-outline-danger delete-unit" data-id="{{ $unit->id }}">Delete</button>
                         </td>
                     </tr>
@@ -141,6 +153,51 @@
                             <option value="outsourced">Outsourced</option>
                             <option value="customizable">Customizable</option>
                         </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label-custom">Catering Mode</label>
+                            <select class="form-select input-custom" id="catering_mode" name="catering_mode">
+                                <option value="internal">Internal (In-House)</option>
+                                <option value="external">External</option>
+                                <option value="both">Both</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label-custom">Food Service Style</label>
+                            <select class="form-select input-custom" id="food_service_style" name="food_service_style">
+                                <option value="static_place">Static Place</option>
+                                <option value="on_table">On Table</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label-custom">Male Staff</label>
+                            <input type="number" class="form-control input-custom" id="staff_male" name="staff_male" min="0" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label-custom">Female Staff</label>
+                            <input type="number" class="form-control input-custom" id="staff_female" name="staff_female" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-custom">Amenities</label>
+                        <div class="row g-2" style="font-size:13px;">
+                            @php
+                                $amenityOptions = ['parking' => 'Parking', 'wheelchair' => 'Wheelchair Access', 'ac' => 'AC / Heating', 'sound_system' => 'Sound System', 'generator' => 'Generator Backup', 'bridal_room' => 'Bridal Room', 'stage' => 'Stage', 'washrooms' => 'Washrooms', 'waiting_area' => 'Waiting Area', 'dining_tables' => 'Dining Tables'];
+                            @endphp
+                            @foreach($amenityOptions as $val => $label)
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input amenity-check" type="checkbox" name="amenities[]" value="{{ $val }}" id="amenity_{{ $val }}">
+                                        <label class="form-check-label" for="amenity_{{ $val }}">{{ $label }}</label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label-custom">Menu Summary</label>
@@ -242,7 +299,19 @@ document.querySelectorAll('.edit-unit').forEach(btn => {
         document.getElementById('max_capacity').value = this.dataset.max_capacity;
         document.getElementById('base_price').value = this.dataset.base_price;
         document.getElementById('decor_type').value = this.dataset.decor_type;
+        document.getElementById('catering_mode').value = this.dataset.catering_mode || 'internal';
+        document.getElementById('food_service_style').value = this.dataset.food_service_style || 'static_place';
+        document.getElementById('staff_male').value = this.dataset.staff_male || 0;
+        document.getElementById('staff_female').value = this.dataset.staff_female || 0;
         document.getElementById('menu_summary').value = this.dataset.menu_summary;
+
+        document.querySelectorAll('.amenity-check').forEach(c => c.checked = false);
+        let amenities = [];
+        try { amenities = JSON.parse(this.dataset.amenities || '[]'); } catch (e) {}
+        amenities.forEach(a => {
+            const box = document.getElementById('amenity_' + a);
+            if (box) box.checked = true;
+        });
         document.getElementById('unitSubmitBtn').textContent = 'Update';
         unitModal.show();
     });
@@ -268,6 +337,7 @@ document.querySelectorAll('.delete-unit').forEach(btn => {
 document.getElementById('unitModal').addEventListener('hidden.bs.modal', function() {
     editingUnitId = null;
     document.getElementById('unitForm').reset();
+    document.querySelectorAll('.amenity-check').forEach(c => c.checked = false);
     document.getElementById('unitModalTitle').textContent = 'Add Unit';
     document.getElementById('unitSubmitBtn').textContent = 'Save';
 });

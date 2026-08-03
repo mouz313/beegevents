@@ -157,6 +157,20 @@
     border-radius: 10px;
     padding: 10px 14px;
 }
+.kyc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.kyc-badge-verified { background: rgba(40,167,69,0.12); color: #28a745; }
+.kyc-badge-pending { background: rgba(212,160,23,0.15); color: #b8860b; }
+.kyc-badge-suspended, .kyc-badge-incomplete { background: rgba(220,53,69,0.12); color: #dc3545; }
 </style>
 @endpush
 
@@ -167,6 +181,10 @@
         <span class="strip-item"><i class="ti ti-mail"></i> {{ auth()->user()->email }}</span>
         <span style="color:var(--border);">|</span>
         <span class="strip-item"><i class="ti ti-phone"></i> {{ auth()->user()->phone ?: 'Not provided' }}</span>
+        @php $badge = $profile ? $profile->kycBadge() : null; @endphp
+        @if($badge)
+            <span class="kyc-badge {{ $badge['class'] }}"><i class="ti ti-shield-check"></i> {{ $badge['label'] }}</span>
+        @endif
         <span style="margin-left:auto;font-size:11px;color:var(--text-muted);">
             <i class="ti ti-info-circle"></i> These are from your registration account.
         </span>
@@ -224,9 +242,8 @@
                 {{-- STEP 1: Business Information --}}
                 <div class="form-step" id="formStep1">
                     <div class="text-center mb-4">
-                        @if($profile && $profile->logo_path)
-                            <img src="{{ asset('storage/' . $profile->logo_path) }}" class="logo-preview" id="logoPreview">
-                        @else
+                        <img src="{{ $profile && $profile->logo_path ? asset('storage/' . $profile->logo_path) : '#' }}" class="logo-preview" id="logoPreview" style="{{ $profile && $profile->logo_path ? '' : 'display:none;' }}">
+                        @if(!($profile && $profile->logo_path))
                             <div class="logo-placeholder mx-auto" id="logoPlaceholder">
                                 <i class="ti ti-camera"></i>
                             </div>
@@ -283,7 +300,7 @@
                     <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
                         Specifications for your selected vendor type.
                     </div>
-                    @include('vendor.partials.contact-legal', ['values' => $specValues])
+                    @include('vendor.partials.contact-legal', ['values' => $specValues, 'requireKyc' => true])
                     @foreach(config('vendor-specs.types', []) as $typeKey => $typeDef)
                         @include('vendor.partials.type-specs', [
                             'typeKey' => $typeKey,
@@ -320,27 +337,27 @@
                     <div class="section-title"><i class="ti ti-wallet"></i> Bank / Payout Details</div>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label-custom">Bank Name</label>
+                            <label class="form-label-custom">Bank Name <span style="color:var(--red);">*</span></label>
                             <input type="text" class="input-custom @error('bank_name') is-invalid @enderror"
-                                   name="bank_name" value="{{ old('bank_name', $profile->bank_name ?? '') }}" placeholder="e.g. HBL, Meezan">
+                                   name="bank_name" value="{{ old('bank_name', $profile->bank_name ?? '') }}" placeholder="e.g. HBL, Meezan" required>
                             @error('bank_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">Account Title</label>
+                            <label class="form-label-custom">Account Title <span style="color:var(--red);">*</span></label>
                             <input type="text" class="input-custom @error('bank_account_title') is-invalid @enderror"
-                                   name="bank_account_title" value="{{ old('bank_account_title', $profile->bank_account_title ?? '') }}">
+                                   name="bank_account_title" value="{{ old('bank_account_title', $profile->bank_account_title ?? '') }}" required>
                             @error('bank_account_title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">Account Number</label>
+                            <label class="form-label-custom">Account Number <span style="color:var(--red);">*</span></label>
                             <input type="text" class="input-custom @error('bank_account_number') is-invalid @enderror"
-                                   name="bank_account_number" value="{{ old('bank_account_number', $profile->bank_account_number ?? '') }}">
+                                   name="bank_account_number" value="{{ old('bank_account_number', $profile->bank_account_number ?? '') }}" required>
                             @error('bank_account_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">IBAN</label>
+                            <label class="form-label-custom">IBAN <span style="color:var(--red);">*</span></label>
                             <input type="text" class="input-custom @error('bank_iban') is-invalid @enderror"
-                                   name="bank_iban" value="{{ old('bank_iban', $profile->bank_iban ?? '') }}" placeholder="PK36...">
+                                   name="bank_iban" value="{{ old('bank_iban', $profile->bank_iban ?? '') }}" placeholder="PK36..." required>
                             @error('bank_iban')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
@@ -348,25 +365,27 @@
                     <div class="section-title"><i class="ti ti-id"></i> Identity Verification (CNIC)</div>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label-custom">CNIC Front</label>
+                            <label class="form-label-custom">CNIC Front @if(!($profile && $profile->cnic_front_path))<span style="color:var(--red);">*</span>@endif</label>
                             @if($profile && $profile->cnic_front_path)
                                 <div style="margin-bottom:6px;">
                                     <a href="{{ asset('storage/' . $profile->cnic_front_path) }}" target="_blank" style="font-size:12px;color:var(--gold-dark);">View uploaded file</a>
                                 </div>
                             @endif
                             <input type="file" class="input-custom @error('cnic_front') is-invalid @enderror" name="cnic_front" accept="image/jpeg,image/png"
-                                   data-has-file="{{ $profile && $profile->cnic_front_path ? '1' : '0' }}">
+                                   data-has-file="{{ $profile && $profile->cnic_front_path ? '1' : '0' }}"
+                                   {{ $profile && $profile->cnic_front_path ? '' : 'required' }}>
                             @error('cnic_front')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">CNIC Back</label>
+                            <label class="form-label-custom">CNIC Back @if(!($profile && $profile->cnic_back_path))<span style="color:var(--red);">*</span>@endif</label>
                             @if($profile && $profile->cnic_back_path)
                                 <div style="margin-bottom:6px;">
                                     <a href="{{ asset('storage/' . $profile->cnic_back_path) }}" target="_blank" style="font-size:12px;color:var(--gold-dark);">View uploaded file</a>
                                 </div>
                             @endif
                             <input type="file" class="input-custom @error('cnic_back') is-invalid @enderror" name="cnic_back" accept="image/jpeg,image/png"
-                                   data-has-file="{{ $profile && $profile->cnic_back_path ? '1' : '0' }}">
+                                   data-has-file="{{ $profile && $profile->cnic_back_path ? '1' : '0' }}"
+                                   {{ $profile && $profile->cnic_back_path ? '' : 'required' }}>
                             @error('cnic_back')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
@@ -407,8 +426,8 @@ let currentStep = 1;
 
 const MILESTONES = {
     1: ['business_name', 'vendor_type', 'phone', 'city', 'address'],
-    2: ['cancellation_policy', 'contact_person_name', 'contact_person_phone'],
-    3: ['bank_name', 'bank_account_title', 'cnic_front', 'cnic_back'],
+    2: ['cancellation_policy', 'contact_person_name', 'contact_person_phone', 'legal_doc'],
+    3: ['bank_name', 'bank_account_title', 'bank_account_number', 'bank_iban', 'cnic_front', 'cnic_back'],
 };
 
 function fieldEl(name) {
@@ -573,8 +592,14 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', functio
         },
         body: formData,
     })
-    .then(res => res.json())
+    .then(res => res.json().catch(() => null))
     .then(data => {
+        if (!data) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> {{ $profile ? "Update Profile" : "Create Profile" }}';
+            showToast('Server error. Please try again.', 'error');
+            return;
+        }
         if (data.success) {
             showToast('Profile saved successfully!', 'success');
             setTimeout(function () {
@@ -610,6 +635,7 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', functio
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> {{ $profile ? "Update Profile" : "Create Profile" }}';
         console.error(err);
+        showToast('Server error. Please try again.', 'error');
     });
 });
 </script>

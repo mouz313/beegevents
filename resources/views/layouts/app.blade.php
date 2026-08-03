@@ -63,7 +63,6 @@
 
     <ul class="nav-links">
         <li><a href="{{ route('browse.index') }}" class="{{ request()->routeIs('browse.*') ? 'active' : '' }}"><i class="ti ti-building-arch"></i> Browse</a></li>
-        <li><a href="{{ route('browse.packages') }}" class="{{ request()->routeIs('browse.packages') ? 'active' : '' }}"><i class="ti ti-gift"></i> Packages</a></li>
         <li><a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}"><i class="ti ti-news"></i> Blog</a></li>
         @auth
             @php $role = auth()->user()->role; @endphp

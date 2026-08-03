@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CorporateLead;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CorporateLeadController extends Controller
@@ -22,7 +23,9 @@ class CorporateLeadController extends Controller
             'requirement_notes' => 'nullable|string',
         ]);
 
-        CorporateLead::create($request->all());
+        CorporateLead::create(array_merge($request->all(), [
+            'user_id' => User::where('email', $request->email)->value('id'),
+        ]));
 
         if ($request->ajax()) {
             return response()->json(['success' => true]);

@@ -155,6 +155,34 @@
                     </select>
                 </div>
             </div>
+            <div class="sr-field">
+                <label>Venue Type</label>
+                <div class="sr-input-wrap">
+                    <i class="ti ti-building-arch"></i>
+                    <select name="venue_type">
+                        <option value="">All Venues</option>
+                        <option value="marriage_hall">Marriage Hall</option>
+                        <option value="banquet_hall">Banquet Hall</option>
+                        <option value="farm_house">Farm House</option>
+                        <option value="community_center">Community Center</option>
+                        <option value="hotel_ballroom">Hotel Ballroom</option>
+                        <option value="rooftop">Rooftop</option>
+                        <option value="lawn">Lawn</option>
+                        <option value="marquee">Marquee</option>
+                    </select>
+                </div>
+            </div>
+            <div class="sr-field">
+                <label>Event Time</label>
+                <div class="sr-input-wrap">
+                    <i class="ti ti-clock-hour-3"></i>
+                    <select name="time_slot">
+                        <option value="">Any Time</option>
+                        <option value="noon">Noon</option>
+                        <option value="evening">Evening</option>
+                    </select>
+                </div>
+            </div>
             <button type="submit" class="sr-btn">
                 <i class="ti ti-search"></i> Search
             </button>

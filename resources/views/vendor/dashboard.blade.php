@@ -68,12 +68,36 @@
         @endif
     </div>
 
-    @if(!$profile || $profile->status == 'pending')
+    @if(!$profile)
+        <div class="alert alert-warning">
+            <strong>Pending Verification!</strong> Create your vendor profile to get started.
+            <a href="{{ route('vendor.profile.create') }}" class="alert-link">Complete your profile</a>
+        </div>
+    @elseif($profile->status == 'pending')
+        @php $missing = $profile->kycMissing(); @endphp
         <div class="alert alert-warning">
             <strong>Pending Verification!</strong> Your vendor profile is being reviewed by admin.
-            @if(!$profile)
-                <a href="{{ route('vendor.profile.create') }}" class="alert-link">Complete your profile</a>
+            @if($missing)
+                <div style="margin-top:6px;">
+                    <strong>Complete KYC:</strong> {{ implode(', ', $missing) }}
+                    <a href="{{ route('vendor.profile.create') }}" class="alert-link">Complete now</a>
+                </div>
             @endif
+        </div>
+    @elseif($profile->status == 'blocked')
+        <div class="alert alert-danger" style="border-radius:12px;">
+            <strong><i class="ti ti-alert-triangle"></i> Your package is expired.</strong> Buy a package to show your listings on the website.
+            <a href="{{ route('vendor.packages.index') }}" class="alert-link">Buy a package →</a>
+        </div>
+    @elseif(!$profile->activePackage() && $profile->onTrial())
+        <div class="alert alert-info" style="border-radius:12px;">
+            <strong><i class="ti ti-clock"></i> Free trial active.</strong> Your trial ends {{ $profile->trial_ends_at->format('M d, Y') }} ({{ $profile->trial_ends_at->diffForHumans() }}). Buy a package before it expires to keep your listings visible.
+            <a href="{{ route('vendor.packages.index') }}" class="alert-link">Browse packages →</a>
+        </div>
+    @elseif(!$profile->activePackage())
+        <div class="alert alert-warning" style="border-radius:12px;">
+            <strong><i class="ti ti-box"></i> No active package.</strong> Your listings may be hidden. Buy a package to stay visible on the website.
+            <a href="{{ route('vendor.packages.index') }}" class="alert-link">Buy a package →</a>
         </div>
     @endif
 

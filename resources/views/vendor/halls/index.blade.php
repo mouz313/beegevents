@@ -24,11 +24,16 @@
                 <div class="profile-card">
                     <div class="card-body-custom" style="padding:20px;">
                         <div class="d-flex justify-content-between">
-                            <h5 style="margin:0;color:var(--charcoal);font-weight:700;font-size:16px;">{{ $hall->name }}</h5>
+                            <h5 style="margin:0;color:var(--charcoal);font-weight:700;font-size:16px;">{{ $hall->name }}
+                                @if($hall->venue_type)
+                                    <span style="font-size:10px;font-weight:600;background:var(--light-honey);color:var(--gold-dark);padding:2px 8px;border-radius:12px;text-transform:capitalize;vertical-align:middle;">{{ str_replace('_', ' ', $hall->venue_type) }}</span>
+                                @endif
+                            </h5>
                             <div>
                                 <button class="btn btn-sm btn-outline-gold edit-hall"
                                     data-id="{{ $hall->id }}"
                                     data-name="{{ $hall->name }}"
+                                    data-venue_type="{{ $hall->venue_type }}"
                                     data-address="{{ $hall->address }}"
                                     data-description="{{ $hall->description ?? '' }}"
                                     data-has_floors="{{ $hall->has_floors }}">Edit</button>
@@ -146,6 +151,22 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
+                                <label class="form-label-custom">Venue Type</label>
+                                <select class="form-select input-custom" id="venue_type" name="venue_type">
+                                    <option value="">Select type</option>
+                                    <option value="marriage_hall">Marriage Hall</option>
+                                    <option value="banquet_hall">Banquet Hall</option>
+                                    <option value="farm_house">Farm House</option>
+                                    <option value="community_center">Community Center</option>
+                                    <option value="hotel_ballroom">Hotel Ballroom</option>
+                                    <option value="rooftop">Rooftop</option>
+                                    <option value="lawn">Lawn</option>
+                                    <option value="marquee">Marquee</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
                                 <label class="form-label-custom">Has Multiple Floors</label>
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="has_floors" name="has_floors" value="1" checked>
@@ -209,6 +230,7 @@ document.querySelectorAll('.edit-hall').forEach(btn => {
         document.getElementById('hallModalTitle').textContent = 'Edit Hall';
         document.getElementById('hall_id').value = this.dataset.id;
         document.getElementById('name').value = this.dataset.name;
+        document.getElementById('venue_type').value = this.dataset.venue_type || '';
         document.getElementById('address').value = this.dataset.address;
         document.getElementById('description').value = this.dataset.description;
         document.getElementById('has_floors').checked = this.dataset.has_floors === '1';

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AvailabilitySlot;
 use App\Models\HallUnit;
 use App\Models\Package;
 use App\Models\ServiceListing;
@@ -85,9 +86,9 @@ class BudgetMatchingService
         return $results;
     }
 
-    public function buildAutoPackage(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null): array
+    public function buildAutoPackage(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null, ?string $date = null, ?string $timeSlot = null): array
     {
-        $hall = $this->pickHallUnit($budget, $guestCount, $eventType, $city);
+        $hall = $this->pickHallUnit($budget, $guestCount, $eventType, $city, $date, $timeSlot);
         $tag = 'within_budget';
 
         if ($hall) {
@@ -110,23 +111,26 @@ class BudgetMatchingService
             'total' => $total,
             'budget' => $budget,
             'city' => $city,
+            'date' => $date,
+            'time_slot' => $timeSlot,
             'tag' => $tag,
             'within_budget' => $total <= $budget,
         ];
     }
 
-    protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null): ?HallUnit
+    protected function pickHallUnit(float $budget, int $guestCount, ?string $eventType = null, ?string $city = null, ?string $date = null, ?string $timeSlot = null): ?HallUnit
     {
         $units = HallUnit::with('hall.vendorProfile', 'extraServices')
             ->whereHas('hall.vendorProfile', function ($q) use ($city) {
-                $q->where('status', 'verified');
+                $q->visible();
                 if ($city) {
                     $q->where('city', $city);
                 }
             })
             ->where('min_capacity', '<=', $guestCount)
             ->where('max_capacity', '>=', $guestCount)
-            ->get();
+            ->get()
+            ->filter(fn ($unit) => $this->isUnitAvailable($unit, $date, $timeSlot));
 
         $within = $units
             ->filter(fn ($unit) => $unit->base_price <= $budget)
@@ -149,6 +153,38 @@ class BudgetMatchingService
             ->first();
     }
 
+    protected function isUnitAvailable(HallUnit $unit, ?string $date, ?string $timeSlot): bool
+    {
+        // No availability constraint when no date is supplied
+        if (! $date) {
+            return true;
+        }
+
+        $slotType = $timeSlot ?: null;
+
+        return ! AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
+            ->where('resource_id', $unit->id)
+            ->where('date', $date)
+            ->where(function ($q) use ($slotType) {
+                if ($slotType) {
+                    $q->where(function ($s) use ($slotType) {
+                        $s->where('slot_type', $slotType)->orWhereNull('slot_type');
+                    });
+                }
+            })
+            ->where(function ($q) {
+                $q->whereIn('status', ['booked', 'blocked_offline'])
+                    ->orWhere(function ($held) {
+                        $held->where('status', 'held')
+                            ->where(function ($h) {
+                                $h->whereNull('held_until')
+                                    ->orWhere('held_until', '>', now());
+                            });
+                    });
+            })
+            ->exists();
+    }
+
     protected function greedyFill(float $budget, ?string $city = null): Collection
     {
         if ($budget <= 0) {
@@ -157,7 +193,7 @@ class BudgetMatchingService
 
         $listings = ServiceListing::with('serviceCategory', 'vendorProfile')
             ->whereHas('vendorProfile', function ($q) use ($city) {
-                $q->where('status', 'verified');
+                $q->visible();
                 if ($city) {
                     $q->where('city', $city);
                 }

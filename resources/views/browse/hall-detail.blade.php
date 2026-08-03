@@ -3,6 +3,109 @@
 @section('title', $hall->name)
 
 @section('content')
+<style>
+    /* Premium UI Enhancements */
+    :root {
+        --gold-gradient: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
+        --premium-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        --hover-shadow: 0 16px 50px rgba(0,0,0,0.12);
+        --soft-border: 1px solid rgba(0,0,0,0.06);
+    }
+    
+    body { background-color: #F8F9FA; font-family: 'Inter', sans-serif; }
+    
+    /* Immersive Hero Section */
+    .hall-hero {
+        position: relative;
+        padding: 100px 0 80px;
+        background: linear-gradient(135deg, rgba(15,15,15,0.95) 0%, rgba(30,25,20,0.85) 100%), url('{{ $hall->hallImages->count() > 0 ? asset("storage/" . $hall->hallImages->first()->image_path) : "" }}') center/cover no-repeat;
+        color: white;
+        border-bottom: 4px solid var(--gold);
+        margin-bottom: 50px;
+        animation: fadeIn 0.8s ease-out;
+    }
+    .hall-hero-bg { display: none; }
+    .hall-hero-title { font-size: 3.5rem; font-weight: 800; text-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 12px; letter-spacing: -1px; line-height: 1.1; }
+    .hall-hero-address { font-size: 1.15rem; opacity: 0.9; display: flex; align-items: center; gap: 8px; }
+    
+    .hall-hero-stats {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .hero-stat-item { margin-bottom: 16px; transition: transform 0.3s ease; }
+    .hero-stat-item:hover { transform: translateX(5px); }
+    .hero-stat-item:last-child { margin-bottom: 0; }
+    .hero-stat-label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 4px; }
+    .hero-stat-value { display: block; font-size: 1.3rem; font-weight: 700; color: white; }
+    
+    /* Elevated Sections */
+    .detail-section, .about-section, .pricing-section, .vendor-card, .reviews-section, .similar-section {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 35px;
+        box-shadow: var(--premium-shadow);
+        border: var(--soft-border);
+        margin-bottom: 35px;
+        transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+    }
+    .detail-section:hover, .about-section:hover, .pricing-section:hover, .vendor-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--hover-shadow);
+    }
+    .section-title { font-size: 1.6rem; font-weight: 800; color: #1a1a1a; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
+    .section-title i { color: var(--gold); font-size: 2rem; background: rgba(212,175,55,0.1); padding: 10px; border-radius: 12px; }
+    
+    /* Gallery Polish */
+    .gallery-main img { border-radius: 24px; height: 550px; box-shadow: var(--premium-shadow); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .gallery-main { border-radius: 24px; overflow: hidden; }
+    .gallery-main:hover img { transform: scale(1.03); }
+    .gallery-thumbs { gap: 16px; margin-top: 20px; padding-bottom: 12px; }
+    .gallery-thumb { border-radius: 14px; opacity: 0.5; border: 3px solid transparent; transition: all 0.3s; }
+    .gallery-thumb:hover, .gallery-thumb.active { opacity: 1; border-color: var(--gold); transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    
+    /* Dynamic Unit Cards */
+    .unit-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 28px;
+        border: var(--soft-border);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.03);
+        margin-bottom: 24px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .unit-card::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold-gradient); opacity: 0; transition: opacity 0.3s;
+    }
+    .unit-card:hover { transform: translateY(-5px); box-shadow: var(--hover-shadow); border-color: rgba(212,175,55,0.4); }
+    .unit-card:hover::before { opacity: 1; }
+    
+    /* Button Glows */
+    .btn-gold { background: var(--gold-gradient); border: none; box-shadow: 0 8px 20px rgba(212,175,55,0.3); font-weight: 700; letter-spacing: 0.5px; transition: all 0.3s; }
+    .btn-gold:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(212,175,55,0.5); filter: brightness(1.05); }
+    
+    /* About Cards Grid */
+    .about-card { background: #fafafa; border-radius: 20px; padding: 24px; border: var(--soft-border); transition: all 0.3s; }
+    .about-card:hover { background: #fff; transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: rgba(212,175,55,0.2); }
+    .about-card i { background: linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(212,175,55,0.2) 100%); padding: 16px; border-radius: 50%; color: var(--gold-dark); margin-bottom: 16px; font-size: 24px; display: inline-flex; }
+    
+    /* Clean Menus & Specs */
+    .detail-section .row.g-3 .col-md-6 > div { background: #fafafa !important; border-radius: 16px !important; border: var(--soft-border); transition: all 0.3s; }
+    .detail-section .row.g-3 .col-md-6 > div:hover { background: #fff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.06); transform: translateY(-3px); border-color: rgba(212,175,55,0.2); }
+    
+    .detail-section .col-md-6 > div[style*="border:1px solid"] { border-radius: 20px !important; border: var(--soft-border) !important; background: #fafafa !important; transition: all 0.3s; }
+    .detail-section .col-md-6 > div[style*="border:1px solid"]:hover { background: #fff !important; box-shadow: 0 12px 30px rgba(0,0,0,0.06) !important; transform: translateY(-4px); border-color: rgba(212,175,55,0.3) !important; }
+    
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .detail-main { animation: fadeIn 1s ease-out 0.2s both; }
+</style>
 <div class="hall-hero">
     <div class="hall-hero-bg"></div>
     <div class="container position-relative">
@@ -41,7 +144,7 @@
                             </span>
                         </div>
                     </div>
-                    <button type="button" class="btn-gold mt-3" data-bs-toggle="modal" data-bs-target="#bookingModal" data-booking-mode="package" data-booking-hall="{{ $hall->id }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:600;">
+                    <button type="button" class="btn-gold mt-3" data-bs-toggle="modal" data-bs-target="#bookingModal" data-booking-mode="custom" data-booking-hall="{{ $hall->id }}" data-booking-date="{{ $selectedDate }}" data-booking-time-slot="{{ $selectedTimeSlot }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:600;">
                         <i class="ti ti-calendar-plus"></i> Book Now
                     </button>
                 @endif
@@ -246,9 +349,134 @@
         </div>
     </div>
 
+    {{-- Venue Pricing (floor-wise) --}}
+    @if($hall->hallUnits->count() > 0)
+        <div class="pricing-section">
+            <div class="section-title"><i class="ti ti-currency-dollar"></i> Venue Pricing</div>
+            <div class="table-responsive">
+                <table class="table pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Floor</th>
+                            <th>Hall / Unit</th>
+                            <th>Capacity</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if($hall->has_floors && $hall->floors->count() > 0)
+                            @foreach($hall->floors as $floor)
+                                @php $floorUnits = $hall->hallUnits->where('floor_id', $floor->id); @endphp
+                                @forelse($floorUnits as $unit)
+                                    <tr>
+                                        <td><strong>{{ $floor->floor_label }}</strong></td>
+                                        <td>{{ $unit->unit_name }}</td>
+                                        <td>{{ $unit->min_capacity }}–{{ $unit->max_capacity }} guests</td>
+                                        <td><strong style="color:var(--gold-dark);">PKR {{ number_format($unit->base_price) }}</strong></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="text-muted" style="font-size:13px;">No units on this floor.</td></tr>
+                                @endforelse
+                            @endforeach
+                        @else
+                            @foreach($hall->hallUnits as $unit)
+                                <tr>
+                                    <td>—</td>
+                                    <td>{{ $unit->unit_name }}</td>
+                                    <td>{{ $unit->min_capacity }}–{{ $unit->max_capacity }} guests</td>
+                                    <td><strong style="color:var(--gold-dark);">PKR {{ number_format($unit->base_price) }}</strong></td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     {{-- Main content + Sidebar --}}
     <div class="row g-4 mt-1">
         <div class="col-lg-8">
+
+            @php $specRows = $hall->vendorProfile ? $hall->vendorProfile->specDisplayList() : []; @endphp
+            @if(count($specRows) > 0)
+                <div class="detail-section mb-4">
+                    <div class="section-title mb-3"><i class="ti ti-settings"></i> Hall Specifications</div>
+                    <div class="row g-3">
+                        @foreach($specRows as $row)
+                            <div class="col-md-6 col-lg-4">
+                                <div style="background:var(--cream);padding:12px 16px;border-radius:8px;height:100%;">
+                                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">{{ $row['label'] }}</div>
+                                    <div style="font-size:14px;font-weight:600;margin-top:4px;">{{ $row['value'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @php $menuCats = $hall->vendorProfile ? $hall->vendorProfile->menuCategories()->with('menuItems')->get() : collect(); @endphp
+            @if($menuCats->count() > 0)
+                <div class="detail-section mb-4">
+                    <div class="section-title mb-3"><i class="ti ti-cookie"></i> Food Menu</div>
+                    <div class="row g-4">
+                        @foreach($menuCats as $cat)
+                            @php $catItems = $cat->menuItems->where('is_available', true); @endphp
+                            @if($catItems->count() > 0)
+                                <div class="col-md-6">
+                                    <div style="border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;height:100%;">
+                                        <h5 style="font-size:16px;font-weight:700;color:var(--gold-dark);margin-bottom:12px;border-bottom:2px solid var(--cream);padding-bottom:8px;">{{ $cat->name }}</h5>
+                                        <ul style="list-style:none;padding:0;margin:0;">
+                                        @foreach($catItems as $item)
+                                            <li class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px dashed var(--border);">
+                                                <span style="font-size:14px;font-weight:500;color:var(--charcoal);">{{ $item->name }}</span>
+                                                @if($item->price)
+                                                    <span style="font-weight:700;color:var(--gold);font-size:14px;">PKR {{ number_format($item->price) }}</span>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @if($menuSets->count() > 0)
+                <div class="detail-section mb-4">
+                    <div class="section-title mb-3"><i class="ti ti-license"></i> Menu Sets (Packages)</div>
+                    <div class="row g-4">
+                        @foreach($menuSets as $set)
+                            @php $setItems = $set->items->where('is_available', true); @endphp
+                            <div class="col-md-6">
+                                <div style="border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--cream);height:100%;">
+                                    <h5 style="font-size:16px;font-weight:700;color:var(--charcoal);margin-bottom:4px;">{{ $set->name }}</h5>
+                                    @if($set->description)
+                                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">{{ $set->description }}</div>
+                                    @endif
+                                    <ul style="list-style:none;padding:0;margin:0;margin-bottom:16px;">
+                                    @foreach($setItems as $item)
+                                        <li class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px dashed rgba(0,0,0,0.05);">
+                                            <span style="font-size:13px;color:var(--charcoal);">{{ $item->name }}</span>
+                                        </li>
+                                    @endforeach
+                                    </ul>
+                                    @if($setItems->count() > 0)
+                                        <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                            <span style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Set Total</span>
+                                            <span style="font-size:18px;font-weight:800;color:var(--gold-dark);">PKR {{ number_format($set->items->sum('price')) }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @include('browse.partials.combo-card', ['profile' => $hall->vendorProfile])
 
             {{-- Units --}}
             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -258,7 +486,7 @@
                 </div>
             </div>
 
-            <div id="unitBookedData" data-dates='{{ json_encode($unitBookedDates) }}' style="display:none;"></div>
+            <div id="unitBookedData" data-slots='{{ json_encode($unitBookedSlots) }}' style="display:none;"></div>
 
             @if($hall->has_floors && $hall->floors->count() > 0)
                 @foreach($hall->floors as $floor)
@@ -421,45 +649,7 @@
                 </a>
             </div>
 
-            @php $specRows = $hall->vendorProfile ? $hall->vendorProfile->specDisplayList() : []; @endphp
-            @if(count($specRows) > 0)
-                <div class="vendor-card mt-3">
-                    <h6 style="font-weight:700;font-size:13px;margin-bottom:12px;"><i class="ti ti-settings" style="color:var(--gold);"></i> Hall Specifications</h6>
-                    <div class="vendor-stats">
-                        @foreach($specRows as $row)
-                            <div class="vendor-stat-row">
-                                <span class="vendor-stat-label">{{ $row['label'] }}</span>
-                                <span class="vendor-stat-value">{{ $row['value'] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
 
-            @php $menuCats = $hall->vendorProfile ? $hall->vendorProfile->menuCategories()->with('menuItems')->get() : collect(); @endphp
-            @if($menuCats->count() > 0)
-                <div class="vendor-card mt-3">
-                    <h6 style="font-weight:700;font-size:13px;margin-bottom:12px;"><i class="ti ti-cookie" style="color:var(--gold);"></i> Food Menu</h6>
-                    @foreach($menuCats as $cat)
-                        @php $catItems = $cat->menuItems->where('is_available', true); @endphp
-                        @if($catItems->count() > 0)
-                            <div style="margin-bottom:14px;">
-                                <div style="font-size:13px;font-weight:700;color:var(--charcoal);">{{ $cat->name }}</div>
-                                <div style="border-top:1px dashed var(--border);margin:6px 0;padding-top:6px;">
-                                    @foreach($catItems as $item)
-                                        <div class="d-flex justify-content-between align-items-center py-1" style="font-size:12px;gap:8px;">
-                                            <span style="color:var(--text-primary);">{{ $item->name }}</span>
-                                            @if($item->price)
-                                                <span style="font-weight:600;color:var(--gold-dark);white-space:nowrap;">PKR {{ number_format($item->price) }}</span>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            @endif
 
             </div>
         </div>
@@ -483,6 +673,7 @@
                         @endif
                         <div class="similar-card-body">
                             <h6>{{ $sh->name }}</h6>
+                            @include('browse.partials.feature-badge', ['profile' => $sh->vendorProfile])
                             <span style="font-size:11px;color:var(--text-muted);"><i class="ti ti-map-pin"></i> {{ $sh->address }}</span>
                             @if($sh->hallUnits->count() > 0)
                                 <div style="font-size:13px;font-weight:700;color:var(--gold-dark);margin-top:4px;">PKR {{ number_format($sh->hallUnits->min('base_price')) }}+</div>
@@ -614,21 +805,23 @@
     });
 
     // Calendar
-    const unitBookedData = JSON.parse(document.getElementById('unitBookedData').dataset.dates);
+    const unitBookedSlots = JSON.parse(document.getElementById('unitBookedData').dataset.slots);
     const dateInput = document.getElementById('eventDate');
 
     function updateUnitAvailability(date) {
         document.querySelectorAll('.unit-card').forEach(card => {
             const unitId = card.dataset.unitId;
-            const isBooked = unitBookedData[unitId] && unitBookedData[unitId].includes(date);
+            const slot = card.querySelector('input[name="time_slot"]:checked')?.value || 'noon';
+            const bookedSlots = (unitBookedSlots[unitId] && unitBookedSlots[unitId][date]) || [];
+            const isBooked = bookedSlots.includes(slot);
             const btn = card.querySelector('.add-to-cart');
             const badge = card.querySelector('.unit-status');
             if (isBooked) {
                 if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Booked'; }
-                if (badge) { badge.textContent = 'Booked on this date'; badge.className = 'unit-status unavail'; }
+                if (badge) { badge.textContent = 'Booked (' + slot + ')'; badge.className = 'unit-status unavail'; }
             } else {
                 if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Add'; }
-                if (badge) { badge.textContent = 'Available'; badge.className = 'unit-status avail'; }
+                if (badge) { badge.textContent = 'Available (' + slot + ')'; badge.className = 'unit-status avail'; }
             }
         });
     }
@@ -686,12 +879,78 @@
         if (date) applyDate(date);
     });
 
+    // Time slot change re-checks availability per unit
+    document.querySelectorAll('.unit-card input[name="time_slot"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateUnitAvailability(dateInput.value);
+        });
+    });
+
+    // Pre-select time slot from URL (?time_slot=noon|evening)
+    const urlSlot = new URL(window.location).searchParams.get('time_slot');
+    if (urlSlot === 'noon' || urlSlot === 'evening') {
+        document.querySelectorAll(`.unit-card input[name="time_slot"][value="${urlSlot}"]`).forEach(r => {
+            r.checked = true;
+        });
+    }
+
     // Init for default/selected date
     if (dateInput.value) {
         applyDate(dateInput.value);
     }
 
-    // Add to cart with date
+    // Add to cart with date, time slot, menu set, extras, guests and catering
+    function updateUnitSummary(card) {
+        const summary = card.querySelector('.unit-mini-summary');
+        if (!summary) return;
+        const base = parseFloat(summary.dataset.basePrice) || 0;
+        const menuSel = card.querySelector('select[name="menu_set_id"]');
+        const menuPrice = (menuSel && menuSel.selectedOptions[0]) ? (parseFloat(menuSel.selectedOptions[0].dataset.price) || 0) : 0;
+        let extrasTotal = 0;
+        card.querySelectorAll('input[name="extras[]"]:checked').forEach(cb => {
+            extrasTotal += parseFloat(cb.dataset.price) || 0;
+        });
+        const total = base + menuPrice + extrasTotal;
+        summary.querySelector('div:nth-child(2) strong').textContent = '+PKR ' + menuPrice.toLocaleString();
+        summary.querySelector('div:nth-child(3) strong').textContent = '+PKR ' + extrasTotal.toLocaleString();
+        summary.querySelector('div:nth-child(4) strong').textContent = 'PKR ' + total.toLocaleString();
+    }
+
+    function validateUnitGuests(card) {
+        const input = card.querySelector('.guests-input');
+        const hint = card.querySelector('.guests-hint');
+        if (!input || !hint) return true;
+        const v = parseInt(input.value, 10);
+        const min = parseInt(input.dataset.min, 10);
+        const max = parseInt(input.dataset.max, 10);
+        if (!input.value || isNaN(v) || v < min || v > max) {
+            hint.style.color = 'var(--red)';
+            hint.textContent = 'Enter ' + min + '–' + max + ' guests for this unit.';
+            return false;
+        }
+        hint.style.color = 'var(--text-muted)';
+        hint.textContent = 'Capacity: ' + min + '–' + max + ' guests';
+        return true;
+    }
+
+    document.querySelectorAll('.unit-card .guests-input').forEach(inp => {
+        inp.addEventListener('input', function() {
+            validateUnitGuests(this.closest('.unit-card'));
+        });
+    });
+
+    document.querySelectorAll('.unit-card select[name="menu_set_id"]').forEach(sel => {
+        sel.addEventListener('change', function() {
+            updateUnitSummary(this.closest('.unit-card'));
+        });
+    });
+
+    document.querySelectorAll('.unit-card input[name="extras[]"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateUnitSummary(this.closest('.unit-card'));
+        });
+    });
+
     document.querySelectorAll('.add-to-cart').forEach(btn => {
         btn.addEventListener('click', function() {
             const date = dateInput.value;
@@ -699,6 +958,24 @@
                 showToast('Please select an event date first', 'error');
                 return;
             }
+            const card = this.closest('.unit-card');
+            if (!validateUnitGuests(card)) {
+                showToast('Please enter a valid guest count for this unit.', 'error');
+                return;
+            }
+            const timeSlot = card.querySelector('input[name="time_slot"]:checked')?.value || 'noon';
+            const menuSetId = card.querySelector('select[name="menu_set_id"]')?.value || null;
+            const guests = card.querySelector('.guests-input')?.value || null;
+            const cateringMode = card.querySelector('.catering-select')?.value || null;
+            const extras = [];
+            card.querySelectorAll('input[name="extras[]"]:checked').forEach(cb => {
+                extras.push({
+                    id: cb.value,
+                    name: cb.dataset.name,
+                    price: cb.dataset.price,
+                    price_unit: cb.dataset.priceUnit
+                });
+            });
             fetch('{{ route("customer.cart.add") }}', {
                 method: 'POST',
                 headers: {
@@ -707,7 +984,16 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ type: this.dataset.type, id: this.dataset.id, date: date })
+                body: JSON.stringify({
+                    type: this.dataset.type,
+                    id: this.dataset.id,
+                    date: date,
+                    time_slot: timeSlot,
+                    menu_set_id: menuSetId,
+                    guests: guests,
+                    catering_mode: cateringMode,
+                    extras: extras
+                })
             })
             .then(res => res.json())
             .then(data => {

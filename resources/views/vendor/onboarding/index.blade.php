@@ -65,6 +65,20 @@
 .step.completed:not(:last-child)::after {
     background: var(--green);
 }
+.kyc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.kyc-badge-verified { background: rgba(40,167,69,0.12); color: #28a745; }
+.kyc-badge-pending { background: rgba(212,160,23,0.15); color: #b8860b; }
+.kyc-badge-suspended, .kyc-badge-incomplete { background: rgba(220,53,69,0.12); color: #dc3545; }
 </style>
 @endpush
 
@@ -75,6 +89,12 @@
             <div style="text-align:center;margin-bottom:24px;">
                 <h2 style="color:var(--charcoal);font-weight:800;">Welcome to <span style="color:var(--gold);">BeeG Events</span></h2>
                 <p style="color:var(--text-muted);">Complete these steps to start receiving bookings.</p>
+                @php $badge = $profile ? $profile->kycBadge() : null; @endphp
+                @if($badge)
+                    <div class="mt-2">
+                        <span class="kyc-badge {{ $badge['class'] }}"><i class="ti ti-shield-check"></i> {{ $badge['label'] }}</span>
+                    </div>
+                @endif
             </div>
 
             <div class="step-indicator">
@@ -140,7 +160,7 @@
                             <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
                                 Select your vendor type to show its specification form.
                             </div>
-                            @include('vendor.partials.contact-legal', ['values' => $specValues])
+                            @include('vendor.partials.contact-legal', ['values' => $specValues, 'requireKyc' => true])
                             @foreach(config('vendor-specs.types', []) as $typeKey => $typeDef)
                                 @include('vendor.partials.type-specs', [
                                     'typeKey' => $typeKey,
@@ -162,28 +182,28 @@
                             @csrf
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">CNIC Front</label>
-                                    <input type="file" name="cnic_front" class="form-control" accept="image/jpeg,image/png">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">CNIC Front <span style="color:var(--red);">*</span></label>
+                                    <input type="file" name="cnic_front" class="form-control" accept="image/jpeg,image/png" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">CNIC Back</label>
-                                    <input type="file" name="cnic_back" class="form-control" accept="image/jpeg,image/png">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">CNIC Back <span style="color:var(--red);">*</span></label>
+                                    <input type="file" name="cnic_back" class="form-control" accept="image/jpeg,image/png" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">Bank Name</label>
-                                    <input type="text" name="bank_name" class="form-control" value="{{ old('bank_name', $profile->bank_name ?? '') }}">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">Bank Name <span style="color:var(--red);">*</span></label>
+                                    <input type="text" name="bank_name" class="form-control" value="{{ old('bank_name', $profile->bank_name ?? '') }}" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">Account Title</label>
-                                    <input type="text" name="bank_account_title" class="form-control" value="{{ old('bank_account_title', $profile->bank_account_title ?? '') }}">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">Account Title <span style="color:var(--red);">*</span></label>
+                                    <input type="text" name="bank_account_title" class="form-control" value="{{ old('bank_account_title', $profile->bank_account_title ?? '') }}" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">Account Number</label>
-                                    <input type="text" name="bank_account_number" class="form-control" value="{{ old('bank_account_number', $profile->bank_account_number ?? '') }}">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">Account Number <span style="color:var(--red);">*</span></label>
+                                    <input type="text" name="bank_account_number" class="form-control" value="{{ old('bank_account_number', $profile->bank_account_number ?? '') }}" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" style="font-size:12px;font-weight:600;">IBAN</label>
-                                    <input type="text" name="bank_iban" class="form-control" value="{{ old('bank_iban', $profile->bank_iban ?? '') }}">
+                                    <label class="form-label" style="font-size:12px;font-weight:600;">IBAN <span style="color:var(--red);">*</span></label>
+                                    <input type="text" name="bank_iban" class="form-control" value="{{ old('bank_iban', $profile->bank_iban ?? '') }}" required>
                                 </div>
                             </div>
                             <button type="submit" class="btn-gold mt-3">Next Step <i class="ti ti-arrow-right"></i></button>

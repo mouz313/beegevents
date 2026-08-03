@@ -3,14 +3,32 @@
 @section('title', 'All Vendors')
 
 @section('content')
+<style>
+.kyc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+.kyc-badge-verified { background: rgba(40,167,69,0.12); color: #28a745; }
+.kyc-badge-pending { background: rgba(212,160,23,0.15); color: #b8860b; }
+.kyc-badge-suspended, .kyc-badge-incomplete { background: rgba(220,53,69,0.12); color: #dc3545; }
+</style>
 {{-- Stats Row --}}
 @php
     $totalVendors = \App\Models\VendorProfile::count();
     $pendingCount = \App\Models\VendorProfile::where('status', 'pending')->count();
     $verifiedCount = \App\Models\VendorProfile::where('status', 'verified')->count();
     $suspendedCount = \App\Models\VendorProfile::where('status', 'suspended')->count();
+    $blockedCount = \App\Models\VendorProfile::where('status', 'blocked')->count();
 @endphp
-<div class="stats-grid mb-4" style="grid-template-columns:repeat(4,1fr);">
+<div class="stats-grid mb-4" style="grid-template-columns:repeat(5,1fr);">
     <div class="stat-card" style="border-left:3px solid var(--blue-grey);">
         <div class="stat-label">Total Vendors</div>
         <div class="stat-value">{{ $totalVendors }}</div>
@@ -24,8 +42,12 @@
         <div class="stat-value" style="color:var(--green);">{{ $verifiedCount }}</div>
     </div>
     <div class="stat-card" style="border-left:3px solid var(--red);">
+        <div class="stat-label">Blocked</div>
+        <div class="stat-value" style="color:var(--red);">{{ $blockedCount }}</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid var(--blue-grey);">
         <div class="stat-label">Suspended</div>
-        <div class="stat-value" style="color:var(--red);">{{ $suspendedCount }}</div>
+        <div class="stat-value">{{ $suspendedCount }}</div>
     </div>
 </div>
 
@@ -33,12 +55,20 @@
     <div class="card-header">
         <h5><i class="ti ti-building-store"></i> All Vendors</h5>
         <div class="d-flex gap-2 align-items-center">
+            @if(request('kyc') === 'incomplete')
+                <span class="status-badge" style="background:rgba(220,53,69,0.12);color:#dc3545;">
+                    <i class="ti ti-shield-check"></i> KYC Incomplete
+                </span>
+            @endif
             <span style="font-size:12px;color:var(--text-muted);">{{ $vendors->total() }} total</span>
         </div>
     </div>
     <div class="card-body p-0">
         <div class="p-3 border-bottom" style="background:var(--cream);">
             <form method="GET" action="{{ route('admin.vendors.index') }}" class="row g-2 align-items-end">
+                @if(request('kyc') === 'incomplete')
+                    <input type="hidden" name="kyc" value="incomplete">
+                @endif
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text" style="background:var(--white);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;">
@@ -52,12 +82,18 @@
                 </div>
                 <div class="col-md-2 d-flex gap-1">
                     <button type="submit" class="btn btn-gold btn-sm">Search</button>
-                    @if(request('search'))
+                    @if(request('search') || request('kyc'))
                         <a href="{{ route('admin.vendors.index') }}" class="btn btn-ghost btn-sm">Clear</a>
                     @endif
                 </div>
             </form>
         </div>
+
+        @if(request('kyc') === 'incomplete' && $vendors->count() > 0)
+            <div class="px-3 py-2 border-bottom" style="background:#FDECEC;font-size:12px;color:#b02a37;">
+                <i class="ti ti-alert-triangle"></i> Showing vendors missing at least one required KYC field. They cannot be verified until KYC is complete.
+            </div>
+        @endif
 
         @if($vendors->count() > 0)
             <div style="overflow-x:auto;">
@@ -70,6 +106,7 @@
                             <th>Type</th>
                             <th>City</th>
                             <th>Status</th>
+                            <th>KYC</th>
                             <th style="width:130px;padding-right:20px;"></th>
                         </tr>
                     </thead>
@@ -105,6 +142,10 @@
                                     <span class="status-badge status-{{ $vendor->status }}">
                                         {{ ucfirst($vendor->status) }}
                                     </span>
+                                </td>
+                                <td>
+                                    @php $kycBadge = $vendor->kycBadge(); @endphp
+                                    <span class="kyc-badge {{ $kycBadge['class'] }}">{{ $kycBadge['label'] }}</span>
                                 </td>
                                 <td style="padding-right:20px;">
                                     <div class="d-flex gap-1">

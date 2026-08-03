@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-#[Fillable(['hall_id', 'floor_id', 'unit_name', 'min_capacity', 'max_capacity', 'menu_summary', 'decor_type', 'base_price'])]
+#[Fillable(['hall_id', 'floor_id', 'unit_name', 'min_capacity', 'max_capacity', 'menu_summary', 'decor_type', 'catering_mode', 'food_service_style', 'staff_male', 'staff_female', 'amenities', 'base_price'])]
 class HallUnit extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'amenities' => 'array',
+    ];
 
     /**
      * @return BelongsTo<Hall>

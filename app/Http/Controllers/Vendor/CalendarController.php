@@ -46,23 +46,31 @@ class CalendarController extends Controller
 
     public function blockSlot(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'hall_unit_id' => 'required|exists:hall_units,id',
             'date' => 'required|date',
+            'slot_type' => 'nullable|in:all_day,noon,evening',
             'time_slot' => 'nullable|integer|min:0|max:23',
             'notes' => 'nullable|string|max:500',
         ]);
+
+        $slotType = $validated['slot_type'] ?? ($validated['time_slot'] !== null ? null : 'all_day');
+        if ($slotType === 'all_day') {
+            $slotType = null;
+        }
+        $timeSlot = $validated['time_slot'] ?? null;
 
         $slot = AvailabilitySlot::updateOrCreate(
             [
                 'resource_type' => 'App\Models\HallUnit',
                 'resource_id' => $request->hall_unit_id,
                 'date' => $request->date,
-                'time_slot' => $request->time_slot,
+                'slot_type' => $slotType,
+                'time_slot' => $timeSlot,
             ],
             [
                 'status' => 'blocked_offline',
-                'notes' => $request->notes,
+                'notes' => $validated['notes'] ?? null,
             ]
         );
 
@@ -71,17 +79,25 @@ class CalendarController extends Controller
 
     public function unblockSlot(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'hall_unit_id' => 'required|exists:hall_units,id',
             'date' => 'required|date',
+            'slot_type' => 'nullable|in:all_day,noon,evening',
             'time_slot' => 'nullable|integer|min:0|max:23',
         ]);
 
+        $slotType = $validated['slot_type'] ?? ($validated['time_slot'] !== null ? null : 'all_day');
+        if ($slotType === 'all_day') {
+            $slotType = null;
+        }
+        $timeSlot = $validated['time_slot'] ?? null;
+
         AvailabilitySlot::where([
             'resource_type' => 'App\Models\HallUnit',
-            'resource_id' => $request->hall_unit_id,
-            'date' => $request->date,
-            'time_slot' => $request->time_slot,
+            'resource_id' => $validated['hall_unit_id'],
+            'date' => $validated['date'],
+            'slot_type' => $slotType,
+            'time_slot' => $timeSlot,
             'status' => 'blocked_offline',
         ])->delete();
 

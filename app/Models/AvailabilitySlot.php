@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['resource_type', 'resource_id', 'date', 'time_slot', 'status', 'booking_id', 'notes', 'held_until'])]
+#[Fillable(['resource_type', 'resource_id', 'date', 'time_slot', 'slot_type', 'status', 'booking_id', 'notes', 'held_until'])]
 class AvailabilitySlot extends Model
 {
     use HasFactory;

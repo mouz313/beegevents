@@ -53,6 +53,7 @@
                 <div class="browse-card browse-card-hover d-flex flex-column">
                     <a href="{{ route('browse.listing', $listing) }}" class="text-decoration-none" style="color:inherit;">
                         <div class="card-badge-group">
+                            @include('browse.partials.feature-badge', ['profile' => $listing->vendorProfile])
                             <span class="badge-category">{{ $listing->serviceCategory->name ?? 'Service' }}</span>
                         </div>
                         <div class="card-title">{{ $listing->title }}</div>
@@ -80,7 +81,7 @@
                         <a href="{{ route('browse.listing', $listing) }}" class="btn-outline-gold btn-sm">Details</a>
                         @auth
                             @if(auth()->user()->role == 'customer')
-                                <button class="btn-gold btn-sm add-to-cart" data-type="service_listing" data-id="{{ $listing->id }}">Add to Cart</button>
+                                <button class="btn-gold btn-sm add-to-cart" data-type="service_listing" data-id="{{ $listing->id }}" data-date="{{ $date }}">Add to Cart</button>
                             @endif
                         @endauth
                     </div>
@@ -104,6 +105,11 @@
 <script>
 document.querySelectorAll('.add-to-cart').forEach(btn => {
     btn.addEventListener('click', function() {
+        var date = this.dataset.date || (function () {
+            var d = new Date();
+            d.setDate(d.getDate() + 1);
+            return d.toISOString().split('T')[0];
+        })();
         fetch('{{ route("customer.cart.add") }}', {
             method: 'POST',
             headers: {
@@ -112,14 +118,17 @@ document.querySelectorAll('.add-to-cart').forEach(btn => {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ type: this.dataset.type, id: this.dataset.id })
+            body: JSON.stringify({ type: this.dataset.type, id: this.dataset.id, date: date })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
                 showToast(data.cart_count + ' items in cart', 'success');
+            } else {
+                showToast(data.message || 'Could not add item to cart. Please choose a date.', 'error');
             }
-        });
+        })
+        .catch(() => showToast('Could not add item to cart.', 'error'));
     });
 });
 </script>

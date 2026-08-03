@@ -17,6 +17,7 @@
                         <th>Contact</th>
                         <th>Phone</th>
                         <th>Email</th>
+                        <th>Quotes</th>
                         <th>Status</th>
                         <th></th>
                     </tr>
@@ -28,6 +29,11 @@
                             <td>{{ $lead->contact_person }}</td>
                             <td>{{ $lead->phone }}</td>
                             <td><span class="text-muted">{{ $lead->email }}</span></td>
+                            <td>
+                                <a href="{{ route('admin.leads.show', $lead) }}" style="text-decoration:none;color:inherit;">
+                                    <span class="badge {{ $lead->quotations_count > 0 ? 'bg-warning' : 'bg-secondary' }}">{{ $lead->quotations_count }}</span>
+                                </a>
+                            </td>
                             <td>
                                 <span class="status-badge status-{{ $lead->status == 'converted' ? 'confirmed' : ($lead->status == 'closed' ? 'cancelled' : ($lead->status == 'contacted' ? 'pending' : 'requested')) }}">
                                     {{ ucfirst($lead->status) }}

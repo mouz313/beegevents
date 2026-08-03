@@ -20,6 +20,12 @@ class ServiceListingController extends Controller
     public function store(Request $request)
     {
         $profile = auth()->user()->vendorProfile;
+        if (!$profile->hasListingSlot()) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => 'Listing limit reached for your current plan. Upgrade your package to add more listings.'], 422);
+            }
+            return redirect()->back()->with('error', 'Listing limit reached for your current plan. Upgrade your package to add more listings.');
+        }
         $request->validate([
             'service_category_id' => 'required|exists:service_categories,id',
             'title' => 'required|string|max:255',

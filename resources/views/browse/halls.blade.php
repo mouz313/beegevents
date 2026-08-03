@@ -28,6 +28,22 @@
                         <option value="corporate" style="background:var(--charcoal);">Corporate</option>
                         <option value="birthday" style="background:var(--charcoal);">Birthday</option>
                     </select>
+                    <select name="venue_type" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);color:var(--white);border-radius:8px;padding:8px 10px;font-size:12px;outline:none;flex:0 0 auto;">
+                        <option value="" style="background:var(--charcoal);">All Venues</option>
+                        <option value="marriage_hall" {{ request('venue_type') === 'marriage_hall' ? 'selected' : '' }} style="background:var(--charcoal);">Marriage Hall</option>
+                        <option value="banquet_hall" {{ request('venue_type') === 'banquet_hall' ? 'selected' : '' }} style="background:var(--charcoal);">Banquet Hall</option>
+                        <option value="farm_house" {{ request('venue_type') === 'farm_house' ? 'selected' : '' }} style="background:var(--charcoal);">Farm House</option>
+                        <option value="community_center" {{ request('venue_type') === 'community_center' ? 'selected' : '' }} style="background:var(--charcoal);">Community Center</option>
+                        <option value="hotel_ballroom" {{ request('venue_type') === 'hotel_ballroom' ? 'selected' : '' }} style="background:var(--charcoal);">Hotel Ballroom</option>
+                        <option value="rooftop" {{ request('venue_type') === 'rooftop' ? 'selected' : '' }} style="background:var(--charcoal);">Rooftop</option>
+                        <option value="lawn" {{ request('venue_type') === 'lawn' ? 'selected' : '' }} style="background:var(--charcoal);">Lawn</option>
+                        <option value="marquee" {{ request('venue_type') === 'marquee' ? 'selected' : '' }} style="background:var(--charcoal);">Marquee</option>
+                    </select>
+                    <select name="time_slot" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);color:var(--white);border-radius:8px;padding:8px 10px;font-size:12px;outline:none;flex:0 0 auto;">
+                        <option value="" style="background:var(--charcoal);">Any Time</option>
+                        <option value="noon" {{ request('time_slot') === 'noon' ? 'selected' : '' }} style="background:var(--charcoal);">Noon</option>
+                        <option value="evening" {{ request('time_slot') === 'evening' ? 'selected' : '' }} style="background:var(--charcoal);">Evening</option>
+                    </select>
                     <button type="submit" style="background:var(--gold);border:none;color:var(--charcoal);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Search</button>
                 </form>
             </div>
@@ -48,6 +64,10 @@
             <div class="col-md-4">
                 <a href="{{ route('browse.hall', $hall) }}" class="browse-card browse-card-hover">
                     <div class="card-badge-group">
+                        @include('browse.partials.feature-badge', ['profile' => $hall->vendorProfile])
+                        @if($hall->venue_type)
+                            <span class="badge-unit">{{ ucwords(str_replace('_', ' ', $hall->venue_type)) }}</span>
+                        @endif
                         @if($hall->hallUnits->count() > 0)
                             <span class="badge-unit">{{ $hall->hallUnits->count() }} unit{{ $hall->hallUnits->count() > 1 ? 's' : '' }}</span>
                         @endif

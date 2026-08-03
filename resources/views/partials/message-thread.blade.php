@@ -13,7 +13,7 @@
         <div class="mchat-head-left">
             <div class="mchat-head-icon"><i class="ti ti-message-circle-2"></i></div>
             <div>
-                <div class="mchat-head-title">Chat · Booking #{{ $booking->id }}</div>
+                <div class="mchat-head-title">Chat · Booking {{ $booking->reference }}</div>
                 <div class="mchat-head-sub">@if($participantNames){{ $participantNames }}@else{{ $booking->customer?->name }}@endif</div>
             </div>
         </div>

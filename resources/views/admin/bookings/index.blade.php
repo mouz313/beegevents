@@ -19,6 +19,7 @@
                         <th>ID</th>
                         <th>Customer</th>
                         <th>Event Date</th>
+                        <th>Time</th>
                         <th>Type</th>
                         <th>Items</th>
                         <th>Total</th>
@@ -29,9 +30,14 @@
                 <tbody>
                     @foreach($bookings as $booking)
                         <tr>
-                            <td><strong>#{{ $booking->id }}</strong></td>
-                            <td>{{ $booking->customer->name ?? 'N/A' }}</td>
+                            <td><strong>{{ $booking->reference }}</strong>
+                                @if($booking->booking_type === 'manual')
+                                    <span class="badge bg-secondary" style="font-size:9px;vertical-align:middle;">Manual</span>
+                                @endif
+                            </td>
+                            <td>{{ $booking->customer->name ?? ($booking->booking_type === 'manual' ? 'Manual / Offline' : 'N/A') }}</td>
                             <td>{{ \Carbon\Carbon::parse($booking->event_date)->format('M d, Y') }}</td>
+                            <td>{{ $booking->time_slot ? ucfirst($booking->time_slot) : '—' }}</td>
                             <td>{{ ucfirst($booking->event_type) }}</td>
                             <td>{{ $booking->bookingItems->count() }}</td>
                             <td>PKR {{ number_format($booking->total_price) }}</td>

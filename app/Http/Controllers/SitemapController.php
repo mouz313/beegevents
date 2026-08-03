@@ -10,8 +10,8 @@ class SitemapController extends Controller
 {
     public function index()
     {
-        $halls = Hall::with('vendorProfile')->get();
-        $listings = ServiceListing::with('vendorProfile', 'serviceCategory')->get();
+        $halls = Hall::with('vendorProfile')->whereHas('vendorProfile', fn ($q) => $q->visible())->get();
+        $listings = ServiceListing::with('vendorProfile', 'serviceCategory')->whereHas('vendorProfile', fn ($q) => $q->visible())->get();
         $categories = ServiceCategory::all();
 
         $content = '<?xml version="1.0" encoding="UTF-8"?>';

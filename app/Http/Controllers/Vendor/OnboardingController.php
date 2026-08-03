@@ -50,6 +50,7 @@ class OnboardingController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'cancellation_policy' => 'nullable|string',
+            'legal_doc' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ] + VendorSpecService::rulesFor($request->vendor_type));
 
         $profile->update($request->only('business_name', 'vendor_type', 'city', 'phone', 'address', 'cancellation_policy'));
@@ -67,12 +68,12 @@ class OnboardingController extends Controller
         }
 
         $request->validate([
-            'bank_name' => 'nullable|string|max:100',
-            'bank_account_title' => 'nullable|string|max:255',
-            'bank_account_number' => 'nullable|string|max:50',
-            'bank_iban' => 'nullable|string|max:50',
-            'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
-            'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'bank_name' => 'required|string|max:100',
+            'bank_account_title' => 'required|string|max:255',
+            'bank_account_number' => 'required|string|max:50',
+            'bank_iban' => 'required|string|max:50',
+            'cnic_front' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            'cnic_back' => 'required|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         $data = $request->only('bank_name', 'bank_account_title', 'bank_account_number', 'bank_iban');

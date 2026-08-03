@@ -21,9 +21,8 @@
 - [x] **Fix `php artisan db:show` error** — `Table 'performance_schema.session_status' doesn't exist`; fixed with a MariaDB-aware custom grammar `app/Database/MySqlGrammar.php` (no vendor changes). Also enabled the `intl` PHP extension (required for `db:show` formatting)
 - [x] **Replace default `README.md`** — replaced with real project documentation (setup, roles, payments, production checklist)
 
-## Priority 3 — Business Decisions Needed (blocks correct payment/commission logic)
+## Priority 3 — Business Decisions Needed
 
-- [ ] **Finalize commission % / amount** — flat rate vs. category-based (halls vs. smaller services)
 - [ ] **Finalize vendor payout timing** — before or after the event date
 - [ ] Confirm whether these need to be configurable per vendor/category in the admin panel, or fixed platform-wide
 

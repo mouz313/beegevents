@@ -56,7 +56,38 @@
         </div>
         <div class="stat-value">PKR {{ number_format($stats['totalRevenue']) }}</div>
         <div class="stat-change">
-            <span class="up">Commission: PKR {{ number_format($stats['totalCommission']) }}</span>
+            <span class="up">Package sales: PKR {{ number_format($stats['packageRevenue']) }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid mb-4" style="grid-template-columns:repeat(2,1fr);">
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Active Packages</span>
+            <div class="stat-icon" style="background: rgba(212,160,23,0.12); color: var(--gold);">
+                <i class="ti ti-zap"></i>
+            </div>
+        </div>
+        <div class="stat-value">{{ $stats['activePackages'] }}</div>
+        <div class="stat-change">
+            <a href="{{ route('admin.package-purchases.index') }}" style="color:var(--gold);font-weight:600;font-size:12px;">View purchases →</a>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Pending Package Payments</span>
+            <div class="stat-icon" style="background: rgba(245,166,35,0.12); color: var(--amber);">
+                <i class="ti ti-clock"></i>
+            </div>
+        </div>
+        <div class="stat-value">{{ $stats['pendingPackagePayments'] }}</div>
+        <div class="stat-change">
+            @if($stats['pendingPackagePayments'] > 0)
+                <a href="{{ route('admin.package-purchases.index', ['status' => 'pending']) }}" style="color:var(--amber);font-weight:600;font-size:12px;">{{ $stats['pendingPackagePayments'] }} to verify →</a>
+            @else
+                <span class="up">All verified</span>
+            @endif
         </div>
     </div>
 </div>
@@ -83,7 +114,7 @@
                     <tbody>
                         @forelse($recentBookings as $booking)
                             <tr>
-                                <td><strong>#{{ $booking->id }}</strong></td>
+                                <td><strong>{{ $booking->reference }}</strong></td>
                                 <td>{{ $booking->customer->name ?? 'N/A' }}</td>
                                 <td>{{ \Carbon\Carbon::parse($booking->event_date)->format('M d, Y') }}</td>
                                 <td>{{ ucfirst($booking->event_type) }}</td>
@@ -159,6 +190,10 @@
                 <div class="d-flex justify-between mb-2">
                     <span class="text-muted">Cancelled</span>
                     <span class="status-badge status-cancelled">{{ $stats['cancelledBookings'] }}</span>
+                </div>
+                <div class="d-flex justify-between mb-2">
+                    <span class="text-muted">Blocked Vendors</span>
+                    <a href="{{ route('admin.vendors.index', ['status' => 'blocked']) }}" style="color:var(--danger,#dc3545);font-weight:600;">{{ $stats['blockedVendors'] }}</a>
                 </div>
                 <div class="d-flex justify-between">
                     <span class="text-muted">Open Disputes</span>

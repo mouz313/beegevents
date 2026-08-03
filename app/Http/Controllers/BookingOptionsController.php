@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HallUnit;
-use App\Models\Package;
 use App\Models\ServiceCategory;
 use App\Models\VendorProfile;
 use App\Services\BudgetMatchingService;
@@ -13,53 +11,8 @@ class BookingOptionsController extends Controller
 {
     public function options(Request $request)
     {
-        $hallId = $request->integer('hall_id') ?: null;
-
-        $packages = Package::with(['vendorProfile', 'packageItems'])
-            ->where(function ($q) {
-                $q->whereNull('vendor_profile_id')
-                    ->orWhereHas('vendorProfile', fn ($v) => $v->where('status', 'verified'));
-            })
-            ->when($hallId, function ($q) use ($hallId) {
-                $unitIds = HallUnit::where('hall_id', $hallId)->pluck('id');
-                $q->whereHas('packageItems', fn ($p) => $p
-                    ->where('itemable_type', HallUnit::class)
-                    ->whereIn('itemable_id', $unitIds));
-            })
-            ->get()
-            ->map(function ($pkg) {
-                return [
-                    'id' => $pkg->id,
-                    'title' => $pkg->title,
-                    'description' => $pkg->description,
-                    'total_price' => (float) $pkg->total_price,
-                    'event_type' => $pkg->event_type,
-                    'vendor' => $pkg->vendorProfile ? [
-                        'id' => $pkg->vendorProfile->id,
-                        'business_name' => $pkg->vendorProfile->business_name,
-                        'city' => $pkg->vendorProfile->city,
-                    ] : null,
-                    'items' => $pkg->packageItems->map(function ($item) {
-                        $instance = $item->itemable;
-                        if (! $instance) {
-                            return null;
-                        }
-
-                        return [
-                            'type' => $item->itemable_type === HallUnit::class ? 'hall_unit' : 'service_listing',
-                            'name' => $instance->unit_name ?? $instance->title ?? '',
-                            'price' => (float) ($instance->base_price ?? $instance->price ?? 0),
-                            'city' => $instance->vendorProfile->city
-                                ?? $instance->hall?->vendorProfile?->city
-                                ?? null,
-                        ];
-                    })->filter()->values(),
-                ];
-            })
-            ->values();
-
         $categories = ServiceCategory::with(['serviceListings' => function ($q) {
-            $q->whereHas('vendorProfile', fn ($v) => $v->where('status', 'verified'));
+            $q->whereHas('vendorProfile', fn ($v) => $v->visible());
         }])->get()->map(function ($cat) {
             return [
                 'id' => $cat->id,
@@ -79,18 +32,74 @@ class BookingOptionsController extends Controller
             ];
         })->values();
 
-        $cities = VendorProfile::where('status', 'verified')
-            ->whereNotNull('city')
+        $cities = VendorProfile::whereNotNull('city')
             ->where('city', '!=', '')
+            ->visible()
             ->distinct()
             ->orderBy('city')
             ->pluck('city')
             ->values();
 
         return response()->json([
-            'packages' => $packages,
             'categories' => $categories,
             'cities' => $cities,
+        ]);
+    }
+
+    public function hallOptions(Request $request)
+    {
+        $request->validate(['hall_id' => 'required|exists:halls,id']);
+
+        $hall = \App\Models\Hall::with('vendorProfile', 'hallUnits.extraServices')->findOrFail($request->integer('hall_id'));
+
+        if (! $hall->vendorProfile || ! $hall->vendorProfile->visibleOnSite()) {
+            abort(404);
+        }
+
+        $menuSets = $hall->vendorProfile
+            ? $hall->vendorProfile->menuSets()->with('items')->where('is_active', true)->get()
+            : collect();
+
+        $amenityLabels = [
+            'parking' => 'Parking', 'wheelchair' => 'Wheelchair Access', 'ac' => 'AC / Heating',
+            'sound_system' => 'Sound System', 'generator' => 'Generator Backup', 'bridal_room' => 'Bridal Room',
+            'stage' => 'Stage', 'washrooms' => 'Washrooms', 'waiting_area' => 'Waiting Area', 'dining_tables' => 'Dining Tables',
+        ];
+
+        return response()->json([
+            'hall' => [
+                'id' => $hall->id,
+                'name' => $hall->name,
+                'address' => $hall->address,
+                'description' => $hall->description,
+            ],
+            'units' => $hall->hallUnits->map(function ($unit) use ($menuSets, $amenityLabels) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                    'capacity' => $unit->min_capacity.'-'.$unit->max_capacity,
+                    'min_capacity' => (int) $unit->min_capacity,
+                    'max_capacity' => (int) $unit->max_capacity,
+                    'base_price' => (float) $unit->base_price,
+                    'decor_type' => $unit->decor_type,
+                    'catering_mode' => $unit->catering_mode,
+                    'food_service_style' => $unit->food_service_style,
+                    'staff_male' => (int) $unit->staff_male,
+                    'staff_female' => (int) $unit->staff_female,
+                    'amenities' => collect($unit->amenities ?? [])->map(fn ($a) => $amenityLabels[$a] ?? ucfirst(str_replace('_', ' ', $a)))->values(),
+                    'menu_sets' => $menuSets->map(fn ($set) => [
+                        'id' => $set->id,
+                        'name' => $set->name,
+                        'price' => $set->getTotalPriceAttribute(),
+                    ])->values(),
+                    'extras' => $unit->extraServices->map(fn ($e) => [
+                        'id' => $e->id,
+                        'name' => $e->name,
+                        'price' => (float) $e->price,
+                        'price_unit' => $e->price_unit ?? 'flat',
+                    ])->values(),
+                ];
+            })->values(),
         ]);
     }
 
@@ -101,13 +110,17 @@ class BookingOptionsController extends Controller
             'guest_count' => 'required|integer|min:1',
             'event_type' => 'nullable|string',
             'city' => 'nullable|string|max:255',
+            'date' => 'nullable|date|after_or_equal:today',
+            'time_slot' => 'nullable|in:noon,evening',
         ]);
 
         $bundle = $matcher->buildAutoPackage(
             (float) $validated['budget'],
             (int) $validated['guest_count'],
             ($validated['event_type'] ?? null) ?: null,
-            ($validated['city'] ?? null) ?: null
+            ($validated['city'] ?? null) ?: null,
+            ($validated['date'] ?? null) ?: null,
+            ($validated['time_slot'] ?? null) ?: null
         );
 
         return response()->json(['bundle' => $bundle]);

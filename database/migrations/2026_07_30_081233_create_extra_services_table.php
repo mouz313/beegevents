@@ -13,7 +13,7 @@ return new class extends Migration
             $table->morphs('serviceable');
             $table->string('name');
             $table->decimal('price', 10, 2);
-            $table->enum('price_unit', ['fixed', 'per_person', 'per_hour'])->default('fixed');
+            $table->enum('price_unit', ['flat', 'fixed', 'per_person', 'per_hour', 'per_table'])->default('flat');
             $table->timestamps();
         });
     }

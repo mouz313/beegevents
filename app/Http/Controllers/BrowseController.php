@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AvailabilitySlot;
 use App\Models\BookingItem;
 use App\Models\Hall;
-use App\Models\Package;
 use App\Models\Review;
 use App\Models\ServiceCategory;
 use App\Models\ServiceListing;
@@ -16,8 +15,12 @@ class BrowseController extends Controller
     public function index(Request $request)
     {
         $categories = ServiceCategory::all();
-        $halls = Hall::with('vendorProfile', 'hallUnits', 'hallImages', 'floors')->get();
-        $listings = ServiceListing::with('vendorProfile', 'serviceCategory')->get();
+        $halls = $this->featuredFirst(Hall::with('vendorProfile', 'hallUnits', 'hallImages', 'floors')
+            ->whereHas('vendorProfile', fn ($q) => $q->visible())
+            ->get());
+        $listings = $this->featuredFirst(ServiceListing::with('vendorProfile', 'serviceCategory')
+            ->whereHas('vendorProfile', fn ($q) => $q->visible())
+            ->get());
 
         return view('browse.index', compact('categories', 'halls', 'listings'));
     }
@@ -27,12 +30,17 @@ class BrowseController extends Controller
         $category = ServiceCategory::where('slug', $slug)->firstOrFail();
 
         if ($slug === 'hall') {
-            $halls = Hall::with('vendorProfile', 'hallUnits')->get();
+            $halls = $this->featuredFirst(Hall::with('vendorProfile', 'hallUnits')
+                ->whereHas('vendorProfile', fn ($q) => $q->visible())
+                ->get());
 
             return view('browse.halls', compact('category', 'halls'));
         }
 
-        $listings = ServiceListing::with('vendorProfile')->where('service_category_id', $category->id)->get();
+        $listings = $this->featuredFirst(ServiceListing::with('vendorProfile')
+            ->where('service_category_id', $category->id)
+            ->whereHas('vendorProfile', fn ($q) => $q->visible())
+            ->get());
 
         return view('browse.listings', compact('category', 'listings'));
     }
@@ -40,11 +48,15 @@ class BrowseController extends Controller
     public function hallDetail(Request $request, Hall $hall)
     {
         $selectedDate = $request->get('date', date('Y-m-d', strtotime('+1 day')));
+        $selectedTimeSlot = in_array($request->get('time_slot'), ['noon', 'evening']) ? $request->get('time_slot') : null;
 
         $hall->load('vendorProfile', 'floors', 'hallUnits.floor', 'hallImages');
+        if (! $hall->vendorProfile || ! $hall->vendorProfile->visibleOnSite()) {
+            abort(404);
+        }
         $dateList = $this->buildHallDateList($hall);
 
-        // Per-unit booked dates for client-side checking
+        // Per-unit booked slots (date + time_slot) for client-side checking
         $unitIds = $hall->hallUnits->pluck('id');
         $allBookedItems = BookingItem::where('itemable_type', 'App\Models\HallUnit')
             ->whereIn('itemable_id', $unitIds)
@@ -52,13 +64,23 @@ class BrowseController extends Controller
             ->with('booking')
             ->get();
 
-        $unitBookedDates = [];
+        $unitBookedSlots = [];
         foreach ($unitIds as $uid) {
-            $unitBookedDates[$uid] = [];
+            $unitBookedSlots[$uid] = [];
         }
         foreach ($allBookedItems as $bi) {
-            $unitBookedDates[$bi->itemable_id][] = $bi->booking->event_date->format('Y-m-d');
+            $date = $bi->booking->event_date->format('Y-m-d');
+            $slot = $bi->time_slot ?? 'noon';
+            $unitBookedSlots[$bi->itemable_id][$date] = array_values(array_unique(array_merge(
+                $unitBookedSlots[$bi->itemable_id][$date] ?? [],
+                [$slot]
+            )));
         }
+
+        // Menu sets (active) offered by this hall's vendor
+        $menuSets = $hall->vendorProfile
+            ? $hall->vendorProfile->menuSets()->with(['items.menuCategory'])->where('is_active', true)->orderBy('sort_order')->get()
+            : collect();
 
         // Reviews
         $vendorProfileId = $hall->vendor_profile_id;
@@ -74,15 +96,15 @@ class BrowseController extends Controller
         $city = $hall->vendorProfile->city ?? '';
         $similarHalls = collect();
         if ($city) {
-            $similarHalls = Hall::with('vendorProfile', 'hallUnits')
+            $similarHalls = $this->featuredFirst(Hall::with('vendorProfile', 'hallUnits')
                 ->where('id', '!=', $hall->id)
-                ->whereHas('vendorProfile', fn ($q) => $q->where('city', $city))
+                ->whereHas('vendorProfile', fn ($q) => $q->where('city', $city)->visible())
                 ->take(6)
-                ->get();
+                ->get());
         }
 
         return view('browse.hall-detail', compact(
-            'hall', 'dateList', 'unitBookedDates', 'selectedDate',
+            'hall', 'dateList', 'unitBookedSlots', 'menuSets', 'selectedDate', 'selectedTimeSlot',
             'reviews', 'avgRating', 'totalReviews', 'similarHalls'
         ));
     }
@@ -92,9 +114,32 @@ class BrowseController extends Controller
         $selectedDate = $request->get('date', date('Y-m-d', strtotime('+1 day')));
 
         $listing->load('vendorProfile', 'serviceCategory');
+        if (! $listing->vendorProfile || ! $listing->vendorProfile->visibleOnSite()) {
+            abort(404);
+        }
         $dateList = $this->buildListingDateList($listing);
 
         return view('browse.listing-detail', compact('listing', 'dateList', 'selectedDate'));
+    }
+
+    /**
+     * Reorder a collection so actively boosted vendors (premium > featured) come first.
+     */
+    private function featuredFirst($collection)
+    {
+        return $collection->sortByDesc(function ($item) {
+            $profile = $item->vendorProfile;
+            $tier = $profile && $profile->isFeatured() ? $profile->feature_tier : null;
+
+            if ($tier === 'premium') {
+                return 2;
+            }
+            if ($tier === 'featured') {
+                return 1;
+            }
+
+            return 0;
+        })->values();
     }
 
     private function slotIsUnavailable($slot): bool
@@ -220,13 +265,6 @@ class BrowseController extends Controller
         return $list;
     }
 
-    public function packages()
-    {
-        $packages = Package::with('packageItems')->latest()->get();
-
-        return view('browse.packages', compact('packages'));
-    }
-
     public function search(Request $request)
     {
         $query = $request->get('q');
@@ -236,14 +274,32 @@ class BrowseController extends Controller
         $maxBudget = $request->get('max_budget');
         $minPrice = $request->get('min_price');
         $guests = $request->get('guests');
+        $venueType = $request->get('venue_type');
+        $timeSlot = $request->get('time_slot');
+        $amenities = $request->input('amenities', []);
 
         // ---- Halls ----
-        $hallsQuery = Hall::with('vendorProfile', 'hallUnits');
+        $hallsQuery = Hall::with('vendorProfile', 'hallUnits')
+            ->whereHas('vendorProfile', fn ($q) => $q->visible());
 
         if ($query) {
             $hallsQuery->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                     ->orWhere('address', 'like', "%{$query}%");
+            });
+        }
+
+        if ($venueType) {
+            $hallsQuery->where('venue_type', $venueType);
+        }
+
+        if (count($amenities)) {
+            $hallsQuery->whereHas('hallUnits', function ($q) use ($amenities) {
+                $q->where(function ($q) use ($amenities) {
+                    foreach ($amenities as $am) {
+                        $q->whereJsonContains('amenities', $am);
+                    }
+                });
             });
         }
 
@@ -288,36 +344,84 @@ class BrowseController extends Controller
             });
         }
 
-        // Date availability filter
-        $unavailableHallUnitIds = collect();
+        // Date availability filter (slot-aware; does not over-restrict "any time" searches)
+        $unitTakenMap = collect();
         if ($date) {
-            $unavailableHallUnitIds = BookingItem::where('itemable_type', 'App\Models\HallUnit')
-                ->whereHas('booking', function ($q) use ($date) {
-                    $q->where('event_date', $date)
-                        ->whereNotIn('status', ['cancelled']);
-                })
-                ->pluck('itemable_id');
+            // slot markers explicitly taken (slot_type noon/evening) or blocking the whole day (slot_type null)
+            $slotTaken = AvailabilitySlot::where('resource_type', 'App\Models\HallUnit')
+                ->where('date', $date)
+                ->get()
+                ->filter(fn ($s) => $this->slotIsUnavailable($s));
 
-            $hallsQuery->where(function ($q) use ($unavailableHallUnitIds) {
+            // booking items taking a specific slot on this date
+            $itemTaken = BookingItem::where('itemable_type', 'App\Models\HallUnit')
+                ->whereHas('booking', function ($q) use ($date) {
+                    $q->where('event_date', $date)->whereNotIn('status', ['cancelled']);
+                })
+                ->get();
+
+            $taken = [];
+            foreach ($slotTaken as $s) {
+                $taken[(int) $s->resource_id] = $taken[(int) $s->resource_id] ?? ['noon' => false, 'evening' => false];
+                if ($s->slot_type === null) {
+                    $taken[(int) $s->resource_id]['noon'] = true;
+                    $taken[(int) $s->resource_id]['evening'] = true;
+                } elseif (in_array($s->slot_type, ['noon', 'evening'])) {
+                    $taken[(int) $s->resource_id][$s->slot_type] = true;
+                }
+            }
+            foreach ($itemTaken as $bi) {
+                $slot = $bi->time_slot ?? 'noon';
+                if (! in_array($slot, ['noon', 'evening'])) {
+                    continue;
+                }
+                $taken[(int) $bi->itemable_id] = $taken[(int) $bi->itemable_id] ?? ['noon' => false, 'evening' => false];
+                $taken[(int) $bi->itemable_id][$slot] = true;
+            }
+
+            $unitTakenMap = collect($taken);
+        }
+
+        // Which hall units to hide for the chosen search
+        $hiddenHallUnitIds = collect();
+        if ($date) {
+            if ($timeSlot) {
+                // Only the exact slot is a problem
+                $hiddenHallUnitIds = $unitTakenMap->filter(function ($slots) use ($timeSlot) {
+                    return ! empty($slots[$timeSlot]);
+                })->keys();
+            } else {
+                // "Any time" — a unit is only fully ruled out when both noon AND evening are taken
+                $hiddenHallUnitIds = $unitTakenMap->filter(function ($slots) {
+                    return ! empty($slots['noon']) && ! empty($slots['evening']);
+                })->keys();
+            }
+
+            $hiddenHallUnitIds = $hiddenHallUnitIds->map(fn ($id) => (int) $id);
+
+            $hallsQuery->where(function ($q) use ($hiddenHallUnitIds) {
                 $q->whereDoesntHave('hallUnits')
-                    ->orWhereHas('hallUnits', function ($q) use ($unavailableHallUnitIds) {
-                        $q->whereNotIn('id', $unavailableHallUnitIds);
+                    ->orWhereHas('hallUnits', function ($q) use ($hiddenHallUnitIds) {
+                        $q->whereNotIn('id', $hiddenHallUnitIds);
                     });
             });
         }
 
-        $halls = $hallsQuery->get();
+        $halls = $this->featuredFirst($hallsQuery->get());
 
-        // Annotate halls with available unit count for the date
-        $halls->each(function ($hall) use ($unavailableHallUnitIds, $date) {
+        // Annotate halls with available unit count for the date/slot
+        $halls->each(function ($hall) use ($hiddenHallUnitIds, $date, $timeSlot) {
+            $hidden = $date ? $hiddenHallUnitIds : collect();
             $hall->available_units = $date
-                ? $hall->hallUnits->whereNotIn('id', $unavailableHallUnitIds)->count()
+                ? $hall->hallUnits->whereNotIn('id', $hidden)->count()
                 : $hall->hallUnits->count();
             $hall->total_units = $hall->hallUnits->count();
+            $hall->searched_time_slot = $timeSlot;
         });
 
         // ---- Listings ----
-        $listingsQuery = ServiceListing::with('vendorProfile', 'serviceCategory');
+        $listingsQuery = ServiceListing::with('vendorProfile', 'serviceCategory')
+            ->whereHas('vendorProfile', fn ($q) => $q->visible());
 
         if ($query) {
             $listingsQuery->where(function ($q) use ($query) {
@@ -391,12 +495,12 @@ class BrowseController extends Controller
             $listingsQuery->whereNotIn('id', $unavailableListingIds);
         }
 
-        $listings = $listingsQuery->get();
+        $listings = $this->featuredFirst($listingsQuery->get());
 
         if ($request->ajax()) {
-            return response()->json(compact('query', 'date', 'eventType', 'halls', 'listings'));
+            return response()->json(compact('query', 'date', 'eventType', 'venueType', 'timeSlot', 'amenities', 'halls', 'listings'));
         }
 
-        return view('browse.search', compact('query', 'date', 'eventType', 'city', 'maxBudget', 'minPrice', 'guests', 'halls', 'listings'));
+        return view('browse.search', compact('query', 'date', 'eventType', 'venueType', 'timeSlot', 'amenities', 'city', 'maxBudget', 'minPrice', 'guests', 'halls', 'listings'));
     }
 }

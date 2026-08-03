@@ -24,6 +24,9 @@
         </div>
 
         <div class="sidebar-menu">
+            @php
+                $incompleteKycCount = \App\Models\VendorProfile::incompleteKyc()->count();
+            @endphp
             <div class="menu-label">Main</div>
             <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="ti ti-dashboard"></i> Dashboard
@@ -33,16 +36,28 @@
             <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="ti ti-users"></i> Users
             </a>
-            <a href="{{ route('admin.vendors.index') }}" class="nav-link {{ request()->routeIs('admin.vendors.*') && ! request()->routeIs('admin.vendors.pending') ? 'active' : '' }}">
+            <a href="{{ route('admin.vendors.index') }}" class="nav-link {{ request()->routeIs('admin.vendors.*') && ! request()->routeIs('admin.vendors.pending') && request('kyc') !== 'incomplete' ? 'active' : '' }}">
                 <i class="ti ti-building-store"></i> Vendors
                 @if(\App\Models\VendorProfile::where('status', 'pending')->count() > 0)
                     <span class="badge bg-warning">{{ \App\Models\VendorProfile::where('status', 'pending')->count() }}</span>
+                @endif
+                @if($incompleteKycCount > 0)
+                    <span class="badge bg-danger" title="Incomplete KYC">{{ $incompleteKycCount }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.vendors.pending') }}" class="nav-link {{ request()->routeIs('admin.vendors.pending') ? 'active' : '' }}">
                 <i class="ti ti-clock"></i> Pending Vendors
                 @if(\App\Models\VendorProfile::where('status', 'pending')->count() > 0)
                     <span class="badge bg-warning">{{ \App\Models\VendorProfile::where('status', 'pending')->count() }}</span>
+                @endif
+                @if($incompleteKycCount > 0)
+                    <span class="badge bg-danger" title="Incomplete KYC">{{ $incompleteKycCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.vendors.index', ['kyc' => 'incomplete']) }}" class="nav-link {{ request('kyc') === 'incomplete' ? 'active' : '' }}">
+                <i class="ti ti-shield-check"></i> KYC
+                @if($incompleteKycCount > 0)
+                    <span class="badge bg-danger">{{ $incompleteKycCount }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.bookings.index') }}" class="nav-link {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }}">
@@ -56,6 +71,12 @@
             </a>
             <a href="{{ route('admin.packages.index') }}" class="nav-link {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}">
                 <i class="ti ti-box"></i> Packages
+            </a>
+            <a href="{{ route('admin.package-purchases.index') }}" class="nav-link {{ request()->routeIs('admin.package-purchases.*') ? 'active' : '' }}">
+                <i class="ti ti-receipt-2"></i> Package Purchases
+                @if(\App\Models\VendorPackagePurchase::where('status', 'pending')->count() > 0)
+                    <span class="badge bg-warning">{{ \App\Models\VendorPackagePurchase::where('status', 'pending')->count() }}</span>
+                @endif
             </a>
             <a href="{{ route('admin.payouts.index') }}" class="nav-link {{ request()->routeIs('admin.payouts.*') ? 'active' : '' }}">
                 <i class="ti ti-wallet"></i> Payouts

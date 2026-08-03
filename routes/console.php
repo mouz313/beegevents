@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('app:release-expired-holds')->everyFiveMinutes();
 Schedule::command('app:auto-complete-bookings')->dailyAt('02:00');
+Schedule::command('app:enforce-vendor-packages')->dailyAt('01:00');
